@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0d">
+  <meta name="description" content="CINELIST – osobní filmová knihovna.">
+  <title>CINELIST · Soukromá filmová knihovna</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.streamx.qzz.io https://streamx-api.pages.dev https://api.tvmaze.com https://v3-cinemeta.strem.io; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <link rel="stylesheet" href="./styles.css?v=3.1.0">
+</head>
+<body class="locked">
+  <!-- All icons are inline: the design is fully functional without icon CDNs. -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true">
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4m-4 8h4m10-8h4m-4 8h4"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 2 5 5 5-5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M12 5h7v7m0-7-9 9"/><path d="M19 14v5H5V5h5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7zM20 17l.7 2.3L23 20l-2.3.7L20 23l-.7-2.3L17 20l2.3-.7z"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 3v18m-4-4 4 4 4-4M16 21V3m-4 4 4-4 4 4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10m-7 5h4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  </svg>
+
+  <section class="lock-screen" id="lockScreen" aria-labelledby="lockTitle">
+    <div class="lock-wrap">
+      <button id="lockThemeToggle" class="round-btn lock-theme-button" type="button" aria-label="Přepnout světlý nebo tmavý režim" title="Přepnout motiv"><svg class="icon"><use id="lockThemeIcon" href="#i-sun"/></svg></button>
+      <div class="lock-brand"><span class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-play"/></svg></span><span>CINE<strong>LIST</strong></span></span></div>
+      <div class="lock-box">
+        <div class="lock-illustration"><svg class="icon"><use href="#i-lock"/></svg></div>
+        <h1 id="lockTitle">Vítej zpátky.</h1>
+        <p class="lock-lead">Zadej heslo a odemkni svou knihovnu filmů a seriálů.</p>
+        <form class="lock-form" id="unlockForm" autocomplete="off">
+          <label for="unlockPassword">Heslo ke knihovně</label>
+          <div class="password-row">
+            <input id="unlockPassword" type="password" placeholder="Zadej heslo" autocomplete="current-password" required disabled>
+            <button id="passwordReveal" type="button" aria-label="Zobrazit heslo" title="Zobrazit nebo skrýt heslo"><svg class="icon"><use href="#i-eye"/></svg></button>
+          </div>
+          <button type="submit" class="btn btn-red lock-submit" id="unlockButton" disabled>Načítání databáze…</button>
+          <p id="unlockStatus" class="lock-feedback" role="status" aria-live="polite">Připravuji šifrovaný soubor…</p>
+          <div id="retryWrap" hidden><button type="button" id="retryLoad" class="retry-btn">Zkusit znovu</button></div>
+        </form>
+      </div>
+      <p class="lock-footer">Created by <a href="https://github.com/phstudio2" target="_blank" rel="noopener noreferrer">PH studio</a></p>
+    </div>
+  </section>
+
+  <header class="topbar">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="CINELIST úvod"><span class="brand-mark"><svg class="icon"><use href="#i-play"/></svg></span><span>CINE<strong>LIST</strong></span></a>
+      <nav class="desktop-nav" aria-label="Hlavní navigace">
+        <a class="active" href="#top">Přehled</a>
+        <a href="#knihovna" data-nav-type="movie">Filmy</a>
+        <a href="#knihovna" data-nav-type="series">Seriály</a>
+        <a href="#knihovna" data-nav-type="all">Moje knihovna</a>
+      </nav>
+      <div class="header-tools">
+        <label class="header-search"><svg class="icon"><use href="#i-search"/></svg><input id="globalSearch" aria-label="Hledat film nebo seriál" placeholder="Hledat ve tvé knihovně…" autocomplete="off"/></label>
+        <button class="round-btn" id="themeToggle" title="Přepnout světlý nebo tmavý režim" aria-label="Přepnout barevný režim"><svg class="icon"><use id="themeIcon" href="#i-sun"/></svg></button>
+        <span class="header-divider"></span>
+        <button class="user-avatar" id="lockLibraryBtn" aria-label="Uzamknout knihovnu" title="Uzamknout knihovnu"><svg class="icon"><use href="#i-lock"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="container">
+      <div class="database-meta" role="status" aria-live="polite"><svg class="icon"><use href="#i-clock"/></svg><span id="dbUpdated">Aktualizace databáze: —</span></div>
+      <section class="hero hero-carousel" aria-label="Náhodný výběr z knihovny">
+        <button type="button" class="hero-nav-btn" id="heroPrev" aria-label="Předchozí náhodný tip" title="Předchozí tip"><svg class="icon"><use href="#i-chevron-left"/></svg></button>
+        <div id="heroFeature" class="hero-feature" role="button" tabindex="0" aria-label="Otevřít vybraný film nebo seriál">
+          <div class="hero-feature-poster" id="heroFeaturePoster" aria-hidden="true"></div>
+          <div class="hero-feature-copy" aria-live="polite">
+            
+            <h1 id="heroTitle">Vyber si, co sledovat</h1>
+            <div id="heroMeta" class="hero-feature-meta"></div>
+            <div id="heroGenres" class="hero-feature-genres"></div>
+            <span id="heroOpen" class="hero-open">Zobrazit detail <svg class="icon"><use href="#i-arrow"/></svg></span>
+          </div>
+        </div>
+        <button type="button" class="hero-nav-btn" id="heroNext" aria-label="Další náhodný tip" title="Další tip"><svg class="icon"><use href="#i-chevron-right"/></svg></button>
+        <div class="hero-pagination" id="heroPagination" aria-label="Pořadí doporučení"></div>
+      </section>
+
+      <section class="metrics" aria-label="Statistiky filmů a seriálů">
+        <div class="metric"><div><strong id="statMovies">—</strong><small>Celkem filmů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-film"/></svg></span></div>
+        <div class="metric"><div><strong id="statMovieTime">—</strong><small>Celkový čas</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
+        <div class="metric"><div><strong id="statMovieYear">—</strong><small>Nejčastější rok</small></div><span class="metric-icon"><svg class="icon"><use href="#i-calendar"/></svg></span></div>
+        <div class="metric accent"><div><strong id="statMovieRating">—</strong><small>Průměrné hodnocení</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+        <div class="metric"><div><strong id="statSeries">—</strong><small>Počet seriálů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
+        <div class="metric"><div><strong id="statEpisodes">—</strong><small>Počet dílů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span></div>
+        <div class="metric"><div><strong id="statSeriesTime">—</strong><small>Celkový čas</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
+        <div class="metric accent"><div><strong id="statSeriesRating">—</strong><small>Průměrné hodnocení</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+      </section>
+
+      <section class="library" id="knihovna" aria-label="Knihovna filmů a seriálů">
+        <div class="section-top">
+          <div><h2 class="watchlist-heading">Watchlist<span class="watchlist-heading-accent">.</span></h2></div>
+        </div>
+        <label class="mobile-search"> <svg class="icon"><use href="#i-search"/></svg><input id="mobileSearch" aria-label="Hledat film nebo seriál na mobilu" placeholder="Hledat film nebo seriál…" autocomplete="off"/></label>
+        <div class="library-controls">
+          <div class="tabs" aria-label="Typ titulů">
+            <button class="tab active" data-type="all" aria-pressed="true">Vše <span class="count" id="tabAll">6</span></button>
+            <button class="tab" data-type="movie" aria-pressed="false">Filmy <span class="count" id="tabMovies">3</span></button>
+            <button class="tab" data-type="series" aria-pressed="false">Seriály <span class="count" id="tabSeries">3</span></button>
+          </div>
+          <div class="filter-controls">
+            <label class="select-wrap status-wrap"><svg class="icon"><use href="#i-filter"/></svg><span class="sr-only">Filtrovat podle stavu</span><select class="filter-select" id="statusFilter"><option value="all">Všechny stavy</option><option value="watchlist">Chci vidět</option><option value="download">Ke stažení</option><option value="watching">Rozkoukáno</option><option value="watched">Viděno</option></select></label>
+            <label class="select-wrap sort-wrap"><span class="sr-only">Seřadit knihovnu</span><select class="filter-select" id="sortSelect"><option value="csfd">ČSFD: nejlépe hodnocené</option><option value="name">Název: A–Z</option><option value="year-desc">Rok: nejnovější</option><option value="year-asc">Rok: nejstarší</option><option value="tmdb">TMDB: nejlépe hodnocené</option><option value="imdb">IMDb: nejlépe hodnocené</option><option value="duration">Délka: nejkratší</option></select></label>
+            <div class="layout-switch" aria-label="Zobrazení knihovny"><button id="gridBtn" class="active" aria-label="Zobrazit jako karty" aria-pressed="true" title="Karty"><svg class="icon"><use href="#i-grid"/></svg></button><button id="listBtn" aria-label="Zobrazit jako seznam" aria-pressed="false" title="Seznam"><svg class="icon"><use href="#i-list"/></svg></button></div>
+          </div>
+        </div>
+        <div class="lower-filters">
+          <div id="genreChips" class="filter-chips" aria-label="Rychlé filtry"><button class="chip active" data-chip="all" aria-pressed="true">Všechny žánry</button><button class="chip" data-chip="Krimi" aria-pressed="false">Krimi</button><button class="chip" data-chip="Drama" aria-pressed="false">Drama</button><button class="chip" data-chip="Thriller" aria-pressed="false">Thriller</button><button class="chip" data-chip="90plus" aria-pressed="false">ČSFD 90 % a více</button></div>
+          <label class="genre-all-label"><span class="sr-only">Všechny dostupné žánry</span><select class="filter-select" id="genreSelect"><option value="all">Všechny žánry</option></select></label>
+          <span class="result-count" id="resultCount" role="status" aria-live="polite">Zobrazeno <strong>6</strong> z 6 titulů</span>
+        </div>
+        <div id="catalogue" class="catalogue" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer><div class="container footer-inner"><div><strong>CINELIST</strong> · Osobní filmová knihovna</div><div>Verze 1.0</div></div></footer>
+
+  <nav class="mobile-bottom" aria-label="Mobilní navigace">
+    <button data-mobile-type="all" class="active"><svg class="icon"><use href="#i-grid"/></svg> Vše</button>
+    <button data-mobile-type="movie"><svg class="icon"><use href="#i-film"/></svg> Filmy</button>
+    <button data-mobile-type="series"><svg class="icon"><use href="#i-tv"/></svg> Seriály</button>
+    <button id="mobileFind"><svg class="icon"><use href="#i-search"/></svg> Hledat</button>
+  </nav>
+
+  <dialog id="detailDialog" aria-label="Detail filmu nebo seriálu"><div id="detailContent" class="modal-shell"></div></dialog>
+  <dialog id="galleryDialog" aria-label="Prohlížeč obrázků" class="gallery-dialog"><div class="gallery-lightbox"><button type="button" id="galleryClose" class="gallery-close" aria-label="Zavřít galerii">✕</button><button type="button" id="galleryPrev" class="gallery-arrow" aria-label="Předchozí obrázek">&#10094;</button><figure><img id="galleryImage" alt=""><figcaption id="galleryCaption"></figcaption></figure><button type="button" id="galleryNext" class="gallery-arrow" aria-label="Další obrázek">&#10095;</button></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./app.js?v=3.2.0" defer></script>
+</body>
+</html>
