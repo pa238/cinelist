@@ -7,7 +7,7 @@
   <meta name="description" content="CINELIST – osobní filmová knihovna.">
   <title>CINELIST · Soukromá filmová knihovna</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.streamx.qzz.io https://streamx-api.pages.dev https://api.tvmaze.com https://v3-cinemeta.strem.io; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <link rel="stylesheet" href="./styles.css?v=3.1.0">
+  <link rel="stylesheet" href="./styles.css?v=3.3.0">
 </head>
 <body class="locked">
   <!-- All icons are inline: the design is fully functional without icon CDNs. -->
@@ -98,13 +98,21 @@
 
       <section class="metrics" aria-label="Statistiky filmů a seriálů">
         <div class="metric"><div><strong id="statMovies">—</strong><small>Celkem filmů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-film"/></svg></span></div>
-        <div class="metric"><div><strong id="statMovieTime">—</strong><small>Celkový čas</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
-        <div class="metric"><div><strong id="statMovieYear">—</strong><small>Nejčastější rok</small></div><span class="metric-icon"><svg class="icon"><use href="#i-calendar"/></svg></span></div>
-        <div class="metric accent"><div><strong id="statMovieRating">—</strong><small>Průměrné hodnocení</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
-        <div class="metric"><div><strong id="statSeries">—</strong><small>Počet seriálů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
-        <div class="metric"><div><strong id="statEpisodes">—</strong><small>Počet dílů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span></div>
-        <div class="metric"><div><strong id="statSeriesTime">—</strong><small>Celkový čas</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
-        <div class="metric accent"><div><strong id="statSeriesRating">—</strong><small>Průměrné hodnocení</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+        <div class="metric"><div><strong id="statMovieTime">—</strong><small>Celkový čas filmů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
+        <div class="metric"><div><strong id="statMovieYear">—</strong><small>Nejčastější rok filmů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-calendar"/></svg></span></div>
+        <div class="metric accent"><div><strong id="statMovieRating">—</strong><small>Průměrné hodnocení filmů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+        <div class="metric"><div><strong id="statSeries">—</strong><small>Celkem seriálů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
+        <div class="metric"><div><strong id="statEpisodes">—</strong><small>Celkem epizod</small></div><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span></div>
+        <div class="metric"><div><strong id="statSeasons">—</strong><small>Celkem sérií</small></div><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span></div>
+        <div class="metric accent"><div><strong id="statSeriesRating">—</strong><small>Průměrné hodnocení seriálů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+        <div class="metric"><div><strong id="statAverageEpisodes">—</strong><small>Průměr epizod na seriál</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
+        <div class="metric"><div><strong id="statAverageMovieRuntime">—</strong><small>Průměrná délka filmu</small></div><span class="metric-icon"><svg class="icon"><use href="#i-clock"/></svg></span></div>
+        <div class="metric metric-titled"><div><strong id="statLongestMovie">—</strong><span class="metric-title" id="statLongestMovieTitle">—</span><small>Nejdelší film</small></div><span class="metric-icon"><svg class="icon"><use href="#i-film"/></svg></span></div>
+        <div class="metric metric-titled"><div><strong id="statLongestSeries">—</strong><span class="metric-title" id="statLongestSeriesTitle">—</span><small>Nejdelší seriál podle epizod</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
+        <div class="metric"><div><strong id="statPopularGenre">—</strong><small>Nejčastější žánr</small></div><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span></div>
+        <div class="metric"><div><strong id="statUniqueGenres">—</strong><small>Počet unikátních žánrů</small></div><span class="metric-icon"><svg class="icon"><use href="#i-grid"/></svg></span></div>
+        <div class="metric"><div><strong id="statAverageMovieGenres">—</strong><small>Průměr žánrů na film</small></div><span class="metric-icon"><svg class="icon"><use href="#i-film"/></svg></span></div>
+        <div class="metric"><div><strong id="statAverageSeriesGenres">—</strong><small>Průměr žánrů na seriál</small></div><span class="metric-icon"><svg class="icon"><use href="#i-tv"/></svg></span></div>
       </section>
 
       <section class="library" id="knihovna" aria-label="Knihovna filmů a seriálů">
@@ -147,6 +155,6 @@
   <dialog id="galleryDialog" aria-label="Prohlížeč obrázků" class="gallery-dialog"><div class="gallery-lightbox"><button type="button" id="galleryClose" class="gallery-close" aria-label="Zavřít galerii">✕</button><button type="button" id="galleryPrev" class="gallery-arrow" aria-label="Předchozí obrázek">&#10094;</button><figure><img id="galleryImage" alt=""><figcaption id="galleryCaption"></figcaption></figure><button type="button" id="galleryNext" class="gallery-arrow" aria-label="Další obrázek">&#10095;</button></div></dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="./app.js?v=3.2.0" defer></script>
+  <script src="./app.js?v=3.3.0" defer></script>
 </body>
 </html>

@@ -65,10 +65,12 @@ function poster(item) {
 function itemCard(item) {
   const typeLabel = item.type === 'movie' ? 'Film' : 'Seriál';
   const meta = item.type === 'movie' ? formatMinutes(item.duration) : `${item.seasons ?? '—'} sérií · ${item.episodes ?? '—'} epizod`;
-  const ratings = ['csfd','tmdb','imdb'].filter(p => ratingFor(item,p)).map((p) => {
+  const orderedProviders=Object.keys(item.ratings||{}).sort((a,b)=>a==='csfd'?-1:b==='csfd'?1:0);
+  const ratings = orderedProviders.filter(p => ratingFor(item,p)).slice(0,3).map((p) => {
     const r = ratingFor(item,p);
-    const title = r.sample ? 'Demonstrační hodnocení, není ověřeno' : `Hodnocení ${providerNames[p]}`;
-    return `<span class="rating ${p === 'csfd' ? 'csfd' : ''}" title="${entity(title)}"><span class="rating-name">${providerNames[p]}</span><span class="rating-score">${ratingLabel(p,r)}${r.sample ? '<span class="rating-demo">*</span>' : ''}</span></span>`;
+    const provider=providerNames[p] || p;
+    const title = r.sample ? 'Demonstrační hodnocení, není ověřeno' : `Hodnocení ${provider}`;
+    return `<span class="rating ${p === 'csfd' ? 'csfd' : ''}" title="${entity(title)}"><span class="rating-name">${entity(provider)}</span><span class="rating-score">${ratingLabel(p,r)}${r.sample ? '<span class="rating-demo">*</span>' : ''}</span></span>`;
   }).join('');
   return `<article class="media-card" data-id="${entity(item.id)}" role="button" tabindex="0" aria-label="Otevřít detail: ${entity(item.title)}">
     <div class="card-main">${poster(item)}<div class="card-info"><div class="card-topline"><span class="media-type">${typeLabel}</span><span class="status">${statusLabel(item.status)}</span></div><h3>${entity(item.title)}</h3><div class="card-original">${entity(item.original)}</div><div class="card-meta"><span>${item.year ?? '—'}</span><span class="sep"></span><span>${entity(meta)}</span></div><div class="card-genres">${item.genres.map(g => `<span>${entity(g)}</span>`).join('')}</div></div></div>
@@ -126,8 +128,8 @@ function renderHero() {
     ? `${item.seasons??'—'} sérií · ${item.episodes??'—'} epizod`
     : formatMinutes(item.duration);
   $('#heroMeta').textContent=`${item.type==='movie'?'Film':'Seriál'} · ${item.year??'—'} · ${stat}`;
-  $('#heroGenres').innerHTML=(item.genres||[]).slice(0,3).map(g=>`<span>${entity(g)}</span>`).join('')
-    +(ratingFor(item,'csfd')?`<span class="hero-csfd">ČSFD ${entity(ratingLabel('csfd',ratingFor(item,'csfd')))}</span>`:'');
+  $('#heroGenres').innerHTML=(ratingFor(item,'csfd')?`<span class="hero-csfd">ČSFD ${entity(ratingLabel('csfd',ratingFor(item,'csfd')))}</span>`:'')
+    +(item.genres||[]).slice(0,3).map(g=>`<span>${entity(g)}</span>`).join('');
   $('#heroFeature').dataset.id=item.id;
   $('#heroFeature').setAttribute('aria-label',`Otevřít detail: ${item.title}`);
   $('#heroPagination').innerHTML=heroQueue.map((_,i)=>`<span class="hero-page-dot${i===heroPosition?' active':i<heroPosition?' completed':''}" aria-hidden="true"><span class="hero-dot-fill"></span></span>`).join('');
@@ -178,7 +180,7 @@ function patchPoster(id,url) {
 }
 async function resolveQueuedArtwork(job,session,signal) {
   try {
-    const module=await import('./online-details.mjs?v=3.2.0');
+    const module=await import('./online-details.mjs?v=3.3.0');
     if(signal.aborted || session!==artworkSession)return;
     const art=await module.resolveArtwork(job.item,signal);
     if(signal.aborted || session!==artworkSession || document.body.classList.contains('locked'))return;
@@ -289,19 +291,44 @@ function updateMetrics() {
   const movies=media.filter(m=>m.type==='movie');
   const series=media.filter(m=>m.type==='series');
   const formatTotal=minutes=>minutes>0?`${Math.floor(minutes/60).toLocaleString('cs-CZ')} h ${String(minutes%60).padStart(2,'0')} min`:'—';
+  const positive=value=>Number.isFinite(value) && value>0;
+  const decimal=value=>Number.isFinite(value)?new Intl.NumberFormat('cs-CZ',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value):'—';
   const average=items=>{
     const scores=items.map(item=>ratingFor(item,'csfd')?.value).filter(Number.isFinite);
-    return scores.length?`${Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)} %`:'—';
+    return scores.length?`${decimal(scores.reduce((a,b)=>a+b,0)/scores.length)} %`:'—';
+  };
+  const averagePositive=(items,key)=>{
+    const values=items.map(item=>item[key]).filter(positive);
+    return values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null;
+  };
+  const longest=(items,key)=>items.filter(item=>positive(item[key])).sort((a,b)=>b[key]-a[key] || a.title.localeCompare(b.title,'cs',{sensitivity:'base'}))[0] || null;
+  const genresFor=item=>{
+    const unique=new Map();
+    for(const raw of item.genres||[]){
+      const label=String(raw??'').trim();
+      const key=label.toLocaleLowerCase('cs-CZ');
+      if(label && !unique.has(key))unique.set(key,label);
+    }
+    return [...unique.values()];
   };
   const years=new Map();
   movies.filter(m=>Number.isSafeInteger(m.year)).forEach(m=>years.set(m.year,(years.get(m.year)||0)+1));
   const popularYear=[...years].sort((a,b)=>b[1]-a[1]||b[0]-a[0])[0];
-  const filmTime=movies.reduce((sum,m)=>sum+(m.duration||0),0);
-  const episodeCount=series.reduce((sum,m)=>sum+(m.episodes||0),0);
-  // Series duration represents minutes per episode ONLY when supplied; otherwise unknown.
-  const knownRuntime=series.filter(m=>Number.isFinite(m.episodes) && m.episodes>0 &&
-    Number.isFinite(m.episodeRuntime ?? m.duration) && (m.episodeRuntime ?? m.duration)>0);
-  const seriesTime=knownRuntime.reduce((sum,m)=>sum+(m.episodeRuntime??m.duration)*m.episodes,0);
+  const filmTime=movies.filter(m=>positive(m.duration)).reduce((sum,m)=>sum+m.duration,0);
+  const episodeCount=series.filter(m=>positive(m.episodes)).reduce((sum,m)=>sum+m.episodes,0);
+  const seasonValues=series.map(m=>m.seasons).filter(positive);
+  const seasonCount=seasonValues.reduce((sum,value)=>sum+value,0);
+  const longestMovie=longest(movies,'duration');
+  const longestSeries=longest(series,'episodes');
+  const genreCounts=new Map();
+  const genreLabels=new Map();
+  for(const item of media)for(const genre of genresFor(item)){
+    const key=genre.toLocaleLowerCase('cs-CZ');
+    genreCounts.set(key,(genreCounts.get(key)||0)+1);
+    if(!genreLabels.has(key))genreLabels.set(key,genre);
+  }
+  const popularGenre=[...genreCounts].sort((a,b)=>b[1]-a[1] || genreLabels.get(a[0]).localeCompare(genreLabels.get(b[0]),'cs',{sensitivity:'base'}))[0];
+  const averageGenres=items=>items.length?items.reduce((sum,item)=>sum+genresFor(item).length,0)/items.length:null;
   $('#statMovies').textContent=movies.length.toLocaleString('cs-CZ');
   $('#statMovieTime').textContent=formatTotal(filmTime);
   $('#statMovieYear').textContent=popularYear?String(popularYear[0]):'—';
@@ -309,14 +336,24 @@ function updateMetrics() {
   $('#statMovieRating').textContent=average(movies);
   $('#statSeries').textContent=series.length.toLocaleString('cs-CZ');
   $('#statEpisodes').textContent=episodeCount?episodeCount.toLocaleString('cs-CZ'):'—';
-  $('#statSeriesTime').textContent=formatTotal(seriesTime);
-  $('#statSeriesTime').title=knownRuntime.length<series.length?'Délka epizod není dostupná u všech seriálů. Zobrazen je jen známý čas.':'';
+  $('#statSeasons').textContent=seasonValues.length?seasonCount.toLocaleString('cs-CZ'):'—';
   $('#statSeriesRating').textContent=average(series);
+  $('#statAverageEpisodes').textContent=decimal(averagePositive(series,'episodes'));
+  const averageRuntime=averagePositive(movies,'duration');
+  $('#statAverageMovieRuntime').textContent=averageRuntime===null?'—':formatMinutes(Math.round(averageRuntime));
+  $('#statLongestMovie').textContent=longestMovie?formatMinutes(longestMovie.duration):'—';
+  $('#statLongestMovieTitle').textContent=longestMovie?.title || '—';
+  $('#statLongestSeries').textContent=longestSeries?longestSeries.episodes.toLocaleString('cs-CZ'):'—';
+  $('#statLongestSeriesTitle').textContent=longestSeries?.title || '—';
+  $('#statPopularGenre').textContent=popularGenre?genreLabels.get(popularGenre[0]):'—';
+  $('#statUniqueGenres').textContent=genreCounts.size.toLocaleString('cs-CZ');
+  $('#statAverageMovieGenres').textContent=decimal(averageGenres(movies));
+  $('#statAverageSeriesGenres').textContent=decimal(averageGenres(series));
   $('#tabAll').textContent=media.length;
   $('#tabMovies').textContent=media.filter(m=>m.type==='movie').length;
   $('#tabSeries').textContent=media.filter(m=>m.type==='series').length;
   const count = new Map();
-  media.forEach(m => m.genres.forEach(g => count.set(g, (count.get(g) || 0) + 1)));
+  media.forEach(m => genresFor(m).forEach(g => count.set(g, (count.get(g) || 0) + 1)));
   const genres = [...count.keys()].sort((a,b) => count.get(b)-count.get(a) || a.localeCompare(b,'cs'));
   const choices = genres.slice(0, 5);
   $('#genreChips').innerHTML = `<button class="chip active" data-chip="all" aria-pressed="true">Všechny žánry</button>`
@@ -333,12 +370,13 @@ async function showDetails(id) {
   detailRequest=new AbortController();
   const requestId=++detailCounter;
   const movie=item.type==='movie';
-  const ratings=Object.entries(item.ratings||{}).filter(([,r])=>r && Number.isFinite(r.value)).map(([p,r])=>`<div class="modal-rating ${p==='csfd'?'csfd':''}"><span>${entity(providerNames[p] || p)}</span><strong>${entity(ratingLabel(p,r))}</strong>${r.sample?'<div class="rating-sample">Demo, neověřeno</div>':''}</div>`).join('');
+  const storedRatings=Object.entries(item.ratings||{}).filter(([,rating])=>rating && Number.isFinite(rating.value)).sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  const initialRatings=storedRatings.length?`<div class="online-score-list">${storedRatings.map(([provider,rating])=>`<div class="${provider==='csfd'?'csfd':''}"><span>${entity(providerNames[provider]||provider)}</span><strong>${entity(ratingLabel(provider,rating))}</strong>${rating.sample?'<small>Demo, neověřeno</small>':''}</div>`).join('')}</div>`:'<p class="online-empty">Hodnocení není dostupné.</p>';
   const links=Object.entries(item.links || {}).map(([p,url]) => ({provider:p,url:safeUrl(url)})).filter(l=>l.url).map(l=>`<a class="btn ${l.provider==='csfd'?'btn-red':'btn-ghost'}" href="${entity(l.url)}" target="_blank" rel="noopener noreferrer">Otevřít ${entity(providerNames[l.provider]||l.provider)} ${icon('external')}</a>`).join('');
   $('#detailContent').innerHTML=`<button class="modal-close" id="detailClose" aria-label="Zavřít detail">${icon('close')}</button>
   <div class="modal-visual" id="detailVisual">${poster(item)}<div class="modal-headline"><div class="eyebrow"><span class="dot"></span> ${movie?'Film':'Seriál'} · ${item.year ?? '—'}</div><h2>${entity(item.title)}</h2><p>${entity(item.original)}</p></div></div>
-  <div class="modal-content"><div class="modal-rating-row">${ratings || '<p>Hodnocení není dostupné.</p>'}</div><div class="modal-genres">${item.genres.map(g=>`<span>${entity(g)}</span>`).join('')}</div>
-  <div class="online-details" id="onlineDetails"><div class="online-loading"><span class="spinner" aria-hidden="true"></span><div><strong>Načítám online informace…</strong><small>Obsazení, galerie, doporučení a další údaje se zjišťují až teď.</small></div></div></div>
+  <div class="modal-content"><div class="modal-genres">${item.genres.map(g=>`<span>${entity(g)}</span>`).join('')}</div>
+  <div class="online-details" id="onlineDetails"><section class="online-section"><h3 class="online-heading">Hodnocení</h3>${initialRatings}</section></div>
   <div class="subdetails"><div><span>Rok</span><strong>${item.year ?? '—'}</strong></div><div><span>${movie?'Délka':'Série'}</span><strong>${movie?formatMinutes(item.duration):(item.seasons??'—')}</strong></div>${movie?'':`<div><span>Epizody</span><strong>${item.episodes??'—'}</strong></div>`}<div><span>Stav</span><strong>${statusLabel(item.status)}</strong></div></div>
   <div class="modal-actions">${links || '<span class="modal-note">Žádný externí odkaz.</span>'}</div>
   ${ratingFor(item,'tmdb')?'<details class="source-details"><summary>Informace o zdrojích hodnocení</summary><p>Hodnocení TMDB pochází z The Movie Database. This product uses the TMDB API but is not endorsed or certified by TMDB. <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a>.</p></details>':''}
@@ -346,7 +384,7 @@ async function showDetails(id) {
   if(!$('#detailDialog').open)$('#detailDialog').showModal();
   $('#detailClose').addEventListener('click',()=>$('#detailDialog').close());
   try {
-    const module = await import('./online-details.mjs?v=3.2.0');
+    const module = await import('./online-details.mjs?v=3.3.0');
     if(requestId!==detailCounter || detailRequest.signal.aborted)return;
     await module.renderOnlineDetails(item, $('#onlineDetails'), {
       signal:detailRequest.signal,
@@ -356,7 +394,7 @@ async function showDetails(id) {
   } catch(error) {
     if(requestId===detailCounter && !detailRequest.signal.aborted) {
       console.warn('Online details unavailable:',error);
-      $('#onlineDetails').innerHTML='<p class="online-unavailable">Online informace se nepodařilo načíst. Uložená hodnocení a odkazy jsou stále dostupné.</p>';
+      $('#onlineDetails').innerHTML=`<section class="online-section"><h3 class="online-heading">Hodnocení</h3>${initialRatings}</section><p class="online-unavailable">Rozšířené online sekce se nepodařilo načíst. Uložená hodnocení a odkazy jsou stále dostupné.</p>`;
     }
   }
 }

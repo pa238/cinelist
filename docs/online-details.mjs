@@ -6,6 +6,8 @@ import { cachedJSON } from './api-cache.mjs';
  * third-party metadata are not guaranteed, so local data always remains usable.
  */
 const ENDPOINTS = ['https://api.streamx.qzz.io', 'https://streamx-api.pages.dev'];
+const imdbByTitle = new Map();
+const exactMetadataCache = new Map();
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const imdbPattern = /^tt\d{7,10}$/;
 const text = value => typeof value === 'string' ? value.trim() : '';
@@ -65,10 +67,13 @@ function validateMatch(item,candidate) {
   return nameScore+(y && item.year && Math.abs(item.year-y)===0?3:0);
 }
 async function findImdb(item, signal) {
+  const cacheKey=String(item.id || `${item.type}:${item.original || item.title}`);
+  if(imdbByTitle.has(cacheKey))return imdbByTitle.get(cacheKey);
+  const remember=id=>{if(id)imdbByTitle.set(cacheKey,id);return id;};
   const externalId=item.externalIds?.imdb;
-  if(imdbPattern.test(externalId || ''))return externalId;
+  if(imdbPattern.test(externalId || ''))return remember(externalId);
   const direct=(item.links?.imdb || '').match(/\/title\/(tt\d{7,10})/);
-  if(direct)return direct[1];
+  if(direct)return remember(direct[1]);
   const queries=[...new Set([item.original,item.title].map(text).filter(Boolean))];
   for(const term of queries) {
     let results=await streamx(`/search?q=${encodeURIComponent(term)}&type=${item.type}`,signal).catch(()=>null);
@@ -78,7 +83,7 @@ async function findImdb(item, signal) {
     }
     const choices=Array.isArray(results?.metas)?results.metas:[];
     const ranked=choices.map(candidate=>({candidate,score:validateMatch(item,candidate)})).filter(v=>v.score>=5).sort((a,b)=>b.score-a.score);
-    if(ranked.length && (ranked.length===1 || ranked[0].score>ranked[1].score))return ranked[0].candidate.id;
+    if(ranked.length && (ranked.length===1 || ranked[0].score>ranked[1].score))return remember(ranked[0].candidate.id);
   }
   return null;
 }
@@ -113,12 +118,17 @@ function renderCardsPeople(people) {
     return `<div class="person-card">${pic?`<img loading="lazy" src="${escapeHtml(pic)}" alt="${escapeHtml(name)}">`:'<span class="person-placeholder" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="19"/><path d="M11 95c0-25 15-40 39-40s39 15 39 40"/></svg></span>'}<strong>${escapeHtml(name)}</strong>${role?`<small>${escapeHtml(role)}</small>`:''}</div>`;
   }).join('')}</div>`;
 }
+function recommendationName(meta) {
+  const name=text(meta?.name || meta?.title);
+  return name && !imdbPattern.test(name)?name:'';
+}
 function renderRecs(metas) {
-  const entries=asList(metas).filter(m=>imdbPattern.test(m.id || '') && text(m.name || m.title)).slice(0,9);
+  const entries=asList(metas).filter(m=>imdbPattern.test(m.id || '')).slice(0,9);
   if(!entries.length)return '<p class="online-empty">Doporučení nejsou pro tento titul dostupná.</p>';
   return `<div class="recommendations-scroll">${entries.map(m=>{
+    const name=recommendationName(m);
     const poster=firstImage(m.poster,m.images?.poster);
-    return `<a class="recommendation-card" href="https://www.imdb.com/title/${m.id}/" target="_blank" rel="noopener noreferrer" aria-label="Otevřít ${escapeHtml(m.name||m.title)} na IMDb">${poster?`<img loading="lazy" src="${escapeHtml(poster)}" alt="Plakát: ${escapeHtml(m.name||m.title)}">`:'<div class="recommendation-placeholder" aria-hidden="true">▶</div>'}<strong>${escapeHtml(m.name||m.title)}</strong><small>${escapeHtml(fact(m.releaseInfo || m.year))}</small></a>`;
+    return `<a class="recommendation-card${name?'':' recommendation-resolving'}" data-recommendation-id="${m.id}" href="https://www.imdb.com/title/${m.id}/" target="_blank" rel="noopener noreferrer" ${name?`aria-label="Otevřít ${escapeHtml(name)} na IMDb"`:'aria-label="Načítám název doporučení"'}>${poster?`<img loading="lazy" src="${escapeHtml(poster)}" alt="${name?`Plakát: ${escapeHtml(name)}`:'Plakát doporučeného titulu'}">`:'<div class="recommendation-placeholder" aria-hidden="true"><span class="spinner"></span></div>'}<strong>${name?escapeHtml(name):'<span class="text-placeholder">Načítám…</span>'}</strong><small>${name?escapeHtml(fact(m.releaseInfo || m.year)):''}</small></a>`;
   }).join('')}</div>`;
 }
 /** A single poster in multiple sizes is one image, not a multi-poster gallery. */
@@ -209,6 +219,8 @@ function certificationLabel(...candidates) {
 /** Native pointer drag on horizontally scrolling rows; touch swipe stays native. */
 function initDragScrolling(root) {
   root.querySelectorAll('.people-scroll,.recommendations-scroll,.online-gallery').forEach(el=>{
+    if(el.dataset.dragScrolling==='ready')return;
+    el.dataset.dragScrolling='ready';
     let start=0,offset=0,pointer=null,dragged=false;
     el.addEventListener('pointerdown',e=>{
       if(e.pointerType!=='mouse'||e.button!==0)return;
@@ -274,50 +286,6 @@ export async function resolveArtwork(item, signal) {
   return {poster,backdrop};
 }
 
-function buildLive(item,meta,credits,similar,scores,source='streamx') {
-  const facts=meta.facts || {};
-  const overview=firstText(meta.description,meta.wiki?.extract,item.overview) || 'Popis není dostupný.';
-  const cast=asList(credits?.cast).length?credits.cast:asList(meta.cast).map(entry=>typeof entry==='object'?entry:{name:entry});
-  const crew=asList(credits?.crew).length?credits.crew:asList(meta.director).map(entry=>typeof entry==='object'?entry:{name:entry,role:'Režie'});
-  const poster=firstImage(meta.images?.poster,meta.poster);
-  const backdrop=firstImage(meta.images?.background,meta.background);
-  const pictures=collectPictures(meta,poster,backdrop);
-  const awards=[];
-  const onlineImdb=ratingNumber(scores?.imdb?.rating) ?? ratingNumber(meta.imdbRating);
-  const rt=ratingNumber(scores?.rottenTomatoes?.critics?.score);
-  const rtAudience=ratingNumber(scores?.rottenTomatoes?.audience?.score);
-  const metacritic=ratingNumber(scores?.metacritic?.critics?.score);
-  if(onlineImdb!==null)awards.push(['IMDb',`${onlineImdb.toFixed(1)} / 10`]);
-  if(rt!==null)awards.push(['Rotten Tomatoes',`${rt} %`]);
-  if(rtAudience!==null)awards.push(['RT diváci',`${rtAudience} %`]);
-  if(metacritic!==null)awards.push(['Metacritic',`${metacritic} / 100`]);
-  const epCount=Array.isArray(meta.videos)?meta.videos.filter(v=>v && Number(v.season)>0).length:null;
-  const details=[
-    ['Datum premiéry',localTime(meta.released || meta.releaseDate || meta.premiered || facts.releaseDate || meta.releaseInfo)],
-    ['Délka',runtimeLabel(meta.runtime, facts.runtimeMinutes, item.duration)],
-    ['Věková přístupnost',certificationLabel(meta.certification, facts.certification, scores?.metacritic?.contentRating)],
-    ['Jazyk',fact(meta.language || facts.languages)],
-    ['Popularita',popularityLabel(meta.popularity)],
-    ['Země',fact(facts.countries || meta.country)]
-  ];
-  if(item.type==='series'){
-    details.push(['Počet sérií',fact(Array.isArray(meta.seasons)?meta.seasons.length:item.seasons)]);
-    details.push(['Počet epizod',fact(epCount || item.episodes)]);
-  }
-  return {markup:`
-    ${sectionHeading('Přehled')}
-    <p class="online-overview">${escapeHtml(overview)}</p>
-    ${awards.length?`${sectionHeading('Online hodnocení')}<div class="online-score-list">${awards.map(([key,val])=>`<div><span>${escapeHtml(key)}</span><strong>${escapeHtml(val)}</strong></div>`).join('')}</div>`:''}
-    ${sectionHeading('Další informace')}
-    <div class="online-facts">${details.map(([label,val])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(val)}</strong></div>`).join('')}</div>
-    ${sectionHeading('Obsazení')}${renderCardsPeople(cast)}
-    ${sectionHeading('Tvůrci / štáb')}${renderCardsPeople(crew)}
-    ${sectionHeading('Plakáty a pozadí')}
-    ${pictures.length?`<div class="online-gallery">${pictures.map((pic,i)=>`<button class="gallery-thumb" type="button" data-gallery-index="${i}" aria-label="Otevřít obrázek: ${escapeHtml(pic.name)}"><img loading="lazy" alt="${escapeHtml(pic.name)}" src="${escapeHtml(pic.url)}"><span>${escapeHtml(pic.name)}</span></button>`).join('')}</div>`:'<p class="online-empty">Obrázky nejsou dostupné.</p>'}
-    ${sectionHeading('Podobné a doporučené tituly')}${renderRecs(similar?.metas)}
-    ${source==='tvmaze'?'<p class="online-credit">Seriálová data: <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a> (CC BY-SA)</p>':''}
-  `,backdrop,poster,pictures};
-}
 async function getTVMaze(item,signal) {
   const name=item.original || item.title;
   const url=`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(name)}&embed=cast`;
@@ -332,53 +300,176 @@ async function getTVMaze(item,signal) {
     country:raw.network?.country?.name || raw.webChannel?.country?.name,
     poster:raw.image?.original,background:null,popularity:null,
     cast:raw._embedded?.cast?.map(c=>({name:c.person?.name,image:c.person?.image?.medium,character:c.character?.name})) || []};
-  return buildLive(item,meta,{cast:meta.cast,crew:[]},null,{imdb:null},'tvmaze');
+  return {meta,credits:{cast:meta.cast,crew:[]}};
+}
+const providerLabels={csfd:'ČSFD',tmdb:'TMDB',imdb:'IMDb',tvmaze:'TVmaze',trakt:'Trakt',metacritic:'Metacritic',rt:'Rotten Tomatoes',rt_audience:'RT diváci'};
+const loading=label=>`<div class="online-section-loading"><span class="spinner" aria-hidden="true"></span><span>Načítám ${escapeHtml(label)}…</span></div>`;
+const unavailable=label=>`<p class="online-unavailable">${escapeHtml(label)} se nepodařilo načíst.</p>`;
+
+function storedScores(item) {
+  const entries=Object.entries(item.ratings||{}).filter(([,rating])=>rating && Number.isFinite(rating.value));
+  entries.sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  return new Map(entries.map(([provider,rating])=>[provider,{
+    label:providerLabels[provider] || provider,
+    value:(rating.max===100 || ['csfd','metacritic','rt'].includes(provider))?`${rating.value} %`:Number(rating.value).toFixed(1),
+    sample:rating.sample===true
+  }]));
+}
+function renderScores(target,scores,pending=false,failed=false) {
+  const entries=[...scores].sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  target.innerHTML=entries.length?`<div class="online-score-list">${entries.map(([provider,score])=>`<div class="${provider==='csfd'?'csfd':''}"><span>${escapeHtml(score.label)}</span><strong>${escapeHtml(score.value)}</strong>${score.sample?'<small>Demo, neověřeno</small>':''}</div>`).join('')}</div>${pending?'<p class="online-pending-note">Další online hodnocení se načítají…</p>':''}`:pending?loading('hodnocení'):failed?unavailable('Hodnocení'):'<p class="online-empty">Hodnocení není dostupné.</p>';
+}
+function detailsFor(item,meta,scores) {
+  const facts=meta.facts || {};
+  const epCount=Array.isArray(meta.videos)?meta.videos.filter(v=>v && Number(v.season)>0).length:null;
+  const details=[
+    ['Datum premiéry',localTime(meta.released || meta.releaseDate || meta.premiered || facts.releaseDate || meta.releaseInfo)],
+    ['Délka',runtimeLabel(meta.runtime,facts.runtimeMinutes,item.duration)],
+    ['Věková přístupnost',certificationLabel(meta.certification,facts.certification,scores?.metacritic?.contentRating)],
+    ['Jazyk',fact(meta.language || facts.languages)],['Popularita',popularityLabel(meta.popularity)],['Země',fact(facts.countries || meta.country)]
+  ];
+  if(item.type==='series')details.push(['Počet sérií',fact(Array.isArray(meta.seasons)?meta.seasons.length:item.seasons)],['Počet epizod',fact(epCount || item.episodes)]);
+  return `<div class="online-facts">${details.map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>`;
+}
+function galleryMarkup(pictures) {
+  return pictures.length?`<div class="online-gallery">${pictures.map((pic,index)=>`<button class="gallery-thumb" type="button" data-gallery-index="${index}" aria-label="Otevřít obrázek: ${escapeHtml(pic.name)}"><img loading="lazy" alt="${escapeHtml(pic.name)}" src="${escapeHtml(pic.url)}"><span>${escapeHtml(pic.name)}</span></button>`).join('')}</div>`:'<p class="online-empty">Obrázky nejsou dostupné.</p>';
+}
+function exactMetadata(type,id,signal) {
+  const key=`${type}:${id}`;
+  if(exactMetadataCache.has(key))return Promise.resolve(exactMetadataCache.get(key));
+  return fetchJSON(`https://v3-cinemeta.strem.io/meta/${type}/${id}.json`,signal).then(raw=>{
+    const meta=raw?.meta;
+    if(!meta || !recommendationName(meta))throw new Error('Metadata nemají použitelný název');
+    exactMetadataCache.set(key,meta);
+    return meta;
+  });
+}
+async function resolveRecommendation(id,declaredType,signal) {
+  const types=[declaredType,declaredType==='movie'?'series':'movie'];
+  for(const type of types)try{return await exactMetadata(type,id,signal);}catch(error){if(signal?.aborted)throw error;}
+  for(const type of types)try{
+    const meta=(await streamx(`/meta/${type}/${id}`,signal))?.meta;
+    if(meta && recommendationName(meta))return meta;
+  }catch(error){if(signal?.aborted)throw error;}
+  return null;
+}
+async function hydrateRecommendations(container,entries,declaredType,signal,isCurrent) {
+  const unresolved=entries.filter(meta=>!recommendationName(meta));
+  let cursor=0;
+  const worker=async()=>{
+    while(cursor<unresolved.length){
+      const entry=unresolved[cursor++];
+      const meta=await resolveRecommendation(entry.id,declaredType,signal).catch(()=>null);
+      if(signal?.aborted || !isCurrent())return;
+      const card=container.querySelector(`[data-recommendation-id="${entry.id}"]`);
+      if(!card)continue;
+      if(!meta){card.remove();continue;}
+      const name=recommendationName(meta),poster=firstImage(meta.poster,meta.images?.poster);
+      card.classList.remove('recommendation-resolving');
+      card.setAttribute('aria-label',`Otevřít ${name} na IMDb`);
+      card.innerHTML=`${poster?`<img loading="lazy" src="${escapeHtml(poster)}" alt="Plakát: ${escapeHtml(name)}">`:'<div class="recommendation-placeholder" aria-hidden="true">▶</div>'}<strong>${escapeHtml(name)}</strong><small>${escapeHtml(fact(meta.releaseInfo || meta.year || meta.released))}</small>`;
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(3,unresolved.length)},worker));
+  if(isCurrent() && !container.querySelector('.recommendation-card'))container.innerHTML='<p class="online-empty">Doporučení nejsou pro tento titul dostupná.</p>';
+}
+function patchVisual(item,meta) {
+  const visual=document.querySelector('#detailVisual');
+  if(!visual)return;
+  const backdrop=firstImage(meta.images?.background,meta.background);
+  const poster=firstImage(meta.images?.poster,meta.poster);
+  if(backdrop && !visual.querySelector('.detail-backdrop'))visual.insertAdjacentHTML('afterbegin',`<img class="detail-backdrop" src="${escapeHtml(backdrop)}" alt="" aria-hidden="true">`);
+  if(poster){const original=visual.querySelector('.poster');if(original)original.outerHTML=`<img class="detail-poster" src="${escapeHtml(poster)}" alt="Plakát: ${escapeHtml(item.title)}">`;}
+}
+function bindSectionAssets(node,pictures=[]) {
+  initDragScrolling(node);
+  if(pictures.length)initGallery(node,pictures);
+  node.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>img.classList.add('image-failed'),{once:true}));
 }
 export async function renderOnlineDetails(item,node,{signal,isCurrent}) {
   if(!node || signal?.aborted)return;
-  let rendered = null;
-  try {
-    const imdb=await findImdb(item,signal);
-    if(!imdb)throw new Error('Pro tento titul nebylo nalezeno jednoznačné IMDb ID');
-    const type=item.type;
-    const [metaResult,creditsResult,similarResult,scoresResult]=await Promise.allSettled([
-      streamx(`/meta/${type}/${imdb}`,signal),
-      streamx(`/credits/${type}/${imdb}`,signal),
-      streamx(`/similar/${type}/${imdb}`,signal),
-      streamx(`/scores/${type}/${imdb}`,signal)
-    ]);
-    let metadata=metaResult.status==='fulfilled'?metaResult.value?.meta:null;
-    let source='streamx';
-    if(!metadata){
-      const fallback=await fetchJSON(`https://v3-cinemeta.strem.io/meta/${type}/${imdb}.json`,signal).catch(()=>null);
-      metadata=fallback?.meta;
-      source='cinemeta';
-    }
-    if(!metadata)throw new Error('Není dostupný detail metadata');
-    rendered=buildLive(item,metadata,
-      creditsResult.status==='fulfilled'?creditsResult.value:null,
-      similarResult.status==='fulfilled'?similarResult.value:null,
-      scoresResult.status==='fulfilled'?scoresResult.value:null,source);
-  } catch(error) {
-    if(signal?.aborted)return;
-    if(item.type==='series')rendered=await getTVMaze(item,signal).catch(()=>null);
-    if(!rendered) {
-      if(isCurrent())node.innerHTML=`<p class="online-unavailable">Rozšířené informace se nepodařilo načíst${error?.message?` (${escapeHtml(error.message)})`:''}. Uložené údaje a hodnocení zůstávají dostupné.</p>`;
-      return;
-    }
-  }
+  const scores=storedScores(item);
+  node.innerHTML=`
+    <section class="online-section">${sectionHeading('Hodnocení')}<div data-online="ratings"></div></section>
+    <section class="online-section">${sectionHeading('Přehled')}<div data-online="overview">${loading('přehled')}</div></section>
+    <section class="online-section">${sectionHeading('Další informace')}<div data-online="facts">${loading('další informace')}</div></section>
+    <section class="online-section">${sectionHeading('Obsazení')}<div data-online="cast">${loading('obsazení')}</div></section>
+    <section class="online-section">${sectionHeading('Tvůrci / štáb')}<div data-online="crew">${loading('tvůrce')}</div></section>
+    <section class="online-section">${sectionHeading('Plakáty a pozadí')}<div data-online="gallery">${loading('galerii')}</div></section>
+    <section class="online-section">${sectionHeading('Podobné a doporučené tituly')}<div data-online="recommendations">${loading('doporučení')}</div></section>`;
+  const section=name=>node.querySelector(`[data-online="${name}"]`);
+  renderScores(section('ratings'),scores,true);
+  let imdb;
+  try { imdb=await findImdb(item,signal); } catch { /* handled per section below */ }
   if(!isCurrent() || signal?.aborted)return;
-  node.innerHTML=rendered.markup;
-  initDragScrolling(node);
-  initGallery(node,rendered.pictures || []);
-  // The online image is DOM-only and is never persisted to the encrypted library.
-  const visual=document.querySelector('#detailVisual');
-  if(visual && rendered.backdrop)visual.insertAdjacentHTML('afterbegin',`<img class="detail-backdrop" src="${escapeHtml(rendered.backdrop)}" alt="" aria-hidden="true">`);
-  if(visual && rendered.poster){
-    const original=visual.querySelector('.poster');
-    if(original)original.outerHTML=`<img class="detail-poster" src="${escapeHtml(rendered.poster)}" alt="Plakát: ${escapeHtml(item.title)}">`;
+  if(!imdb){
+    renderScores(section('ratings'),scores,false,!scores.size);
+    for(const name of ['overview','facts','cast','crew','gallery','recommendations'])section(name).innerHTML=unavailable(name==='overview'?'Přehled':'Tato sekce');
+    return;
   }
-  // Broken assets must disappear rather than display broken-image icons.
-  document.querySelectorAll('#detailDialog img').forEach(img=>img.addEventListener('error',()=>img.classList.add('image-failed'),{once:true}));
+  const type=item.type;
+  let bestMeta=null,latestScores=null,credits=null;
+  const applyMeta=(meta,rich=false)=>{
+    if(!meta || !isCurrent() || signal?.aborted)return;
+    if(!bestMeta)bestMeta=meta;
+    else if(rich){
+      const useful=Object.fromEntries(Object.entries(meta).filter(([,value])=>value!=null && value!=='' && (!Array.isArray(value) || value.length)));
+      bestMeta={...bestMeta,...useful,images:{...(bestMeta.images||{}),...(meta.images||{})},facts:{...(bestMeta.facts||{}),...(meta.facts||{})}};
+    }
+    const active=bestMeta;
+    section('overview').innerHTML=`<p class="online-overview">${escapeHtml(firstText(active.description,active.wiki?.extract,item.overview) || 'Popis není dostupný.')}</p>`;
+    section('facts').innerHTML=detailsFor(item,active,latestScores);
+    const pictures=collectPictures(active,firstImage(active.images?.poster,active.poster),firstImage(active.images?.background,active.background));
+    section('gallery').innerHTML=galleryMarkup(pictures);
+    if(!credits){
+      const cast=asList(active.cast).map(entry=>typeof entry==='object'?entry:{name:entry});
+      const crew=asList(active.director).map(entry=>typeof entry==='object'?entry:{name:entry,role:'Režie'});
+      if(cast.length)section('cast').innerHTML=renderCardsPeople(cast);
+      if(crew.length)section('crew').innerHTML=renderCardsPeople(crew);
+    }
+    patchVisual(item,active);bindSectionAssets(node,pictures);
+    const onlineImdb=ratingNumber(active.imdbRating);
+    if(onlineImdb!==null){scores.set('imdb',{label:'IMDb',value:`${onlineImdb.toFixed(1)} / 10`});renderScores(section('ratings'),scores,true);}
+  };
+  const cinemetaPromise=fetchJSON(`https://v3-cinemeta.strem.io/meta/${type}/${imdb}.json`,signal);
+  const metadataPromise=streamx(`/meta/${type}/${imdb}`,signal);
+  const scoresPromise=streamx(`/scores/${type}/${imdb}`,signal);
+  const creditsPromise=streamx(`/credits/${type}/${imdb}`,signal);
+  const similarPromise=streamx(`/similar/${type}/${imdb}`,signal);
+  cinemetaPromise.then(raw=>applyMeta(raw?.meta,false)).catch(()=>{});
+  metadataPromise.then(raw=>applyMeta(raw?.meta,true)).catch(()=>{});
+  scoresPromise.then(raw=>{
+    if(!isCurrent() || signal?.aborted)return;latestScores=raw;
+    const values=[['imdb','IMDb',ratingNumber(raw?.imdb?.rating),v=>`${v.toFixed(1)} / 10`],['rt','Rotten Tomatoes',ratingNumber(raw?.rottenTomatoes?.critics?.score),v=>`${v} %`],['rt_audience','RT diváci',ratingNumber(raw?.rottenTomatoes?.audience?.score),v=>`${v} %`],['metacritic','Metacritic',ratingNumber(raw?.metacritic?.critics?.score),v=>`${v} / 100`]];
+    for(const [key,label,value,format] of values)if(value!==null)scores.set(key,{label,value:format(value)});
+    renderScores(section('ratings'),scores,false,!scores.size);
+    if(bestMeta)section('facts').innerHTML=detailsFor(item,bestMeta,latestScores);
+  }).catch(()=>{if(isCurrent()&&!signal?.aborted)renderScores(section('ratings'),scores,false,!scores.size);});
+  creditsPromise.then(raw=>{
+    if(!isCurrent() || signal?.aborted)return;
+    const cast=asList(raw?.cast),crew=asList(raw?.crew);
+    if(cast.length || crew.length)credits=raw;
+    if(cast.length)section('cast').innerHTML=renderCardsPeople(cast);
+    if(crew.length)section('crew').innerHTML=renderCardsPeople(crew);
+    bindSectionAssets(node);
+  }).catch(()=>{});
+  similarPromise.then(raw=>{
+    if(!isCurrent() || signal?.aborted)return;
+    const entries=asList(raw?.metas).filter(meta=>imdbPattern.test(meta.id || '')).slice(0,9);
+    section('recommendations').innerHTML=renderRecs(entries);bindSectionAssets(node);
+    void hydrateRecommendations(section('recommendations'),entries,type,signal,isCurrent);
+  }).catch(()=>{if(isCurrent()&&!signal?.aborted)section('recommendations').innerHTML=unavailable('Doporučení');});
+  const [cinemetaResult,metadataResult,creditsResult]=await Promise.allSettled([cinemetaPromise,metadataPromise,creditsPromise]);
+  if(!isCurrent() || signal?.aborted)return;
+  if(!bestMeta && item.type==='series'){
+    const fallback=await getTVMaze(item,signal).catch(()=>null);
+    if(fallback && isCurrent() && !signal?.aborted){applyMeta(fallback.meta,true);credits=fallback.credits;section('cast').innerHTML=renderCardsPeople(asList(credits.cast));section('crew').innerHTML=renderCardsPeople(asList(credits.crew));node.insertAdjacentHTML('beforeend','<p class="online-credit">Seriálová data: <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a> (CC BY-SA)</p>');}
+  }
+  if(!bestMeta)for(const name of ['overview','facts','gallery'])section(name).innerHTML=unavailable(name==='overview'?'Přehled':name==='gallery'?'Galerie':'Další informace');
+  if(creditsResult.status==='rejected' && !section('cast').querySelector('.people-scroll'))section('cast').innerHTML=unavailable('Obsazení');
+  if(creditsResult.status==='rejected' && !section('crew').querySelector('.people-scroll'))section('crew').innerHTML=unavailable('Tvůrci a štáb');
+  if(creditsResult.status==='fulfilled' && !section('cast').querySelector('.people-scroll'))section('cast').innerHTML='<p class="online-empty">Obsazení není z dostupných zdrojů k dispozici.</p>';
+  if(creditsResult.status==='fulfilled' && !section('crew').querySelector('.people-scroll'))section('crew').innerHTML='<p class="online-empty">Tvůrci a štáb nejsou z dostupných zdrojů k dispozici.</p>';
+  void cinemetaResult;void metadataResult;
 }
 
