@@ -1,0 +1,18 @@
+# Never publish plaintext film lists or local passwords.
+/private/
+*.secret
+*.key
+.env
+.idea
+.env.*
+.DS_Store
+__pycache__/
+*.pyc
+/docs/*.tmp
+# Local QA screenshots and temporary test data must not be committed.
+/tests/
+/preview-*.png
+
+# Python virtual environment and temporary files
+.venv/
+.pytest_cache/
