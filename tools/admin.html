@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="cs" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0d0c10">
+  <meta name="admin-token" content="%%LOCAL_TOKEN%%">
+  <title>CINELIST · Lokální import</title>
+  <link rel="stylesheet" href="/admin.css">
+  <script defer src="/admin.js"></script>
+</head>
+<body>
+  <header class="top"><div class="wrap head"><div class="brand"><span class="logo">▶</span> CINE<strong>LIST</strong><span class="top-sub">/ ADMIN</span></div><div class="head-actions"><span class="local-indicator"><i></i> POUZE LOKÁLNĚ</span><button id="theme" aria-label="Přepnout světlý a tmavý režim" title="Změnit motiv">☼</button></div></div></header>
+  <main class="wrap">
+    <div class="eyebrow">SPRÁVA SOUKROMÉ KNIHOVNY</div>
+    <h1>Přidej další <em>příběhy.</em></h1>
+    <p class="lead">Stačí URL adresy ČSFD. Název, rok, žánry, délku a dostupná hodnocení se pokusíme načíst automaticky a bezpečně uložit na tento počítač.</p>
+    <div class="layout">
+      <section class="panel" aria-labelledby="importTitle">
+        <div class="panel-head"><span class="step">01</span><div><h2 id="importTitle">Importovat odkazy</h2><p>Vyber jeden ze dvou podporovaných formátů.</p></div></div>
+        <div class="switch" role="tablist" aria-label="Formát importu"><button class="selected" id="txtTab" type="button" role="tab" aria-selected="true" aria-controls="txtPanel">Prostý text (URL)</button><button id="csvTab" type="button" role="tab" aria-selected="false" aria-controls="csvPanel">CSV soubor</button></div>
+        <div id="txtPanel" role="tabpanel" aria-labelledby="txtTab"><label for="urls">Vlož URL, každou na nový řádek</label><textarea id="urls" rows="8" spellcheck="false" placeholder="https://www.csfd.cz/film/123456-ukazka/prehled/&#10;https://www.csfd.cz/film/654321-priklad/prehled/"></textarea><div class="field-note">Přijímáme pouze odkazy na filmy a seriály na csfd.cz.</div></div>
+        <div id="csvPanel" role="tabpanel" aria-labelledby="csvTab" hidden><label for="file">Vyber CSV soubor</label><label class="drop" id="drop"><span class="file-icon">▤</span><strong id="fileName">Klikni pro výběr CSV</strong><span>nebo soubor přetáhni sem</span><input type="file" accept=".csv,text/csv" id="file"></label><div class="field-note">Můžeš použít i starší CSV tabulku. Z ní přečteme pouze ČSFD odkazy, ostatní sloupce ignorujeme.</div></div>
+        <label class="check"><input type="checkbox" id="refresh"><span>Aktualizovat i již importované tituly</span></label>
+        <div class="actions"><button id="submit" class="primary" type="button">Spustit import <span>→</span></button><span id="inputHint" class="hint">Zatím 0 platných URL</span></div>
+        <p class="error" id="error" role="alert" hidden></p>
+      </section>
+      <aside class="side">
+        <section class="panel status-panel" aria-labelledby="progressTitle"><div class="panel-head"><span class="step">02</span><div><h2 id="progressTitle">Průběh importu</h2><p>Každý úspěšný titul se uloží hned.</p></div></div>
+          <div class="progress-top"><span id="phase">Připraveno k importu</span><strong id="count">0 / 0</strong></div><div class="track"><div id="fill" class="fill" ></div></div>
+          <div class="result" id="result" hidden></div>
+          <div class="console" id="events" role="log" aria-live="polite"><div class="placeholder">Zatím žádné záznamy. Import spusť vlevo.</div></div>
+        </section>
+        <section class="panel publish"><div class="panel-head"><span class="step">03</span><div><h2>Publikování změn</h2><p>Veřejný web zůstává pouze pro čtení.</p></div></div><p>Po importu data lokálně zašifruj a nahraj aktualizovaný soubor na GitHub. Příkaz pro šifrování zobrazí výzvu k zadání hesla přímo v terminálu.</p><pre><code>node tools/encrypt.mjs
+git add docs/movies.enc.json
+git commit -m "Update media library"
+git push</code></pre><button id="copy" class="secondary" type="button">Zkopírovat příkazy</button></section>
+      </aside>
+    </div>
+    <div class="notice"><span>ⓘ</span><div><strong>Bezpečnost dat</strong><p>Import běží výhradně na tvém Linuxu. Nezašifrované záznamy se ukládají do <code>private/movies.json</code> a nikdy se neposílají na GitHub. ČSFD může automatické požadavky zablokovat, v tom případě bude chyba uvedena ve výpisu.</p></div></div>
+  </main>
+  <footer class="wrap">CINELIST v3.0 · Lokální import pouze pro vlastníka · Žádný backend na GitHub Pages</footer>
+</body>
+</html>
