@@ -1,4 +1,4 @@
-import { cachedJSON, cachedJSONOnly } from './api-cache.mjs?v=3.5.1';
+import { cachedJSON, cachedJSONOnly } from './api-cache.mjs?v=1.1';
 /**
  * CINELIST online-only detail enhancement.
  * Loaded dynamically only after the user opens a title. No API key or server.

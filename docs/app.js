@@ -199,7 +199,7 @@ function patchPoster(id,url) {
 }
 async function resolveQueuedArtwork(job,session,signal) {
   try {
-    const module=await import('./online-details.mjs?v=3.5.1');
+    const module=await import('./online-details.mjs?v=1.1');
     if(signal.aborted || session!==artworkSession)return;
     const art=await module.resolveArtwork(job.item,signal);
     if(signal.aborted || session!==artworkSession || document.body.classList.contains('locked'))return;
@@ -403,7 +403,7 @@ async function showDetails(id) {
   if(!$('#detailDialog').open)$('#detailDialog').showModal();
   $('#detailClose').addEventListener('click',()=>$('#detailDialog').close());
   try {
-    const module = await import('./online-details.mjs?v=3.5.1');
+    const module = await import('./online-details.mjs?v=1.1');
     if(requestId!==detailCounter || detailRequest.signal.aborted)return;
     await module.renderOnlineDetails(item, $('#onlineDetails'), {
       signal:detailRequest.signal,
@@ -434,7 +434,7 @@ function mergeRatings(item,ratings) {
 }
 async function hydrateRatingsFromCache(session,signal) {
   try {
-    const module=await import('./online-details.mjs?v=3.5.1');
+    const module=await import('./online-details.mjs?v=1.1');
     if(signal.aborted || session!==ratingsSession)return;
     await module.hydrateCachedRatings(media,{signal,onRatings:(item,ratings)=>{
       if(!signal.aborted && session===ratingsSession)mergeRatings(item,ratings);
