@@ -6,7 +6,12 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const entity = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const providerNames = {csfd:'ČSFD',tmdb:'TMDB',imdb:'IMDb',tvmaze:'TVmaze',trakt:'Trakt',metacritic:'Metacritic',rt:'Rotten Tomatoes'};
+const providerNames = {csfd:'ČSFD',tmdb:'TMDB',imdb:'IMDb',tvmaze:'TVmaze',trakt:'Trakt',metacritic:'Metacritic',rt:'Rotten Tomatoes',rt_audience:'RT diváci'};
+const ratingOrder = ['csfd','imdb','metacritic','rt','rt_audience'];
+const ratingProviderSort = (a,b) => {
+  const ai=ratingOrder.indexOf(a),bi=ratingOrder.indexOf(b);
+  return (ai<0?ratingOrder.length:ai)-(bi<0?ratingOrder.length:bi) || a.localeCompare(b,'cs');
+};
 const allowedArts = new Set(['art-a','art-b','art-c','art-d','art-e','art-f']);
 const MAX_LIBRARY_BYTES = 20*1024*1024;
 const state = {type:'all',genre:'all',status:'all',sort:'csfd',query:'',layout:'grid'};
@@ -22,6 +27,8 @@ let heroQueue = [];
 let heroPosition = 0;
 let detailRequest = null;
 let detailCounter = 0;
+let ratingsController = null;
+let ratingsSession = 0;
 let databaseLastModified = null;
 // Online artwork is never merged into the decrypted library or published to Git.
 const artworkById=new Map();
@@ -46,8 +53,8 @@ function ratingFor(item, provider) {
 }
 function ratingLabel(provider, rating) {
   if (!rating) return '—';
-  if (rating.max === 100 || provider === 'csfd' || provider === 'metacritic' || provider === 'rt') return `${rating.value} %`;
-  return Number(rating.value).toFixed(1).replace(/\.0$/, '.0');
+  const percentage=rating.value/rating.max*100;
+  return `${new Intl.NumberFormat('cs-CZ',{maximumFractionDigits:1}).format(percentage)} %`;
 }
 // Legacy ČSFD imports sometimes included the HTML "více" expand link.
 // Clean the in-memory value immediately, even before users re-encrypt their database.
@@ -71,8 +78,8 @@ function poster(item) {
 function itemCard(item) {
   const typeLabel = item.type === 'movie' ? 'Film' : 'Seriál';
   const meta = item.type === 'movie' ? formatMinutes(item.duration) : `${item.seasons ?? '—'} sérií · ${item.episodes ?? '—'} epizod`;
-  const orderedProviders=Object.keys(item.ratings||{}).sort((a,b)=>a==='csfd'?-1:b==='csfd'?1:0);
-  const ratings = orderedProviders.filter(p => ratingFor(item,p)).slice(0,3).map((p) => {
+  const orderedProviders=Object.keys(item.ratings||{}).sort(ratingProviderSort);
+  const ratings = orderedProviders.filter(p => ratingFor(item,p)).map((p) => {
     const r = ratingFor(item,p);
     const provider=providerNames[p] || p;
     const title = r.sample ? 'Demonstrační hodnocení, není ověřeno' : `Hodnocení ${provider}`;
@@ -93,16 +100,22 @@ function filtered() {
     (!q || normalize(`${m.title} ${m.original} ${m.genres.join(' ')} ${m.year}`).includes(q))
   );
   const byName = (a,b) => a.title.localeCompare(b.title, 'cs');
-  const numeric = (item,key) => ratingFor(item,key)?.value ?? -1;
+  const byRating = (a,b,key) => {
+    const av=ratingFor(a,key)?.value,bv=ratingFor(b,key)?.value;
+    if(av==null && bv==null)return byName(a,b);
+    if(av==null)return 1;
+    if(bv==null)return -1;
+    return bv-av || byName(a,b);
+  };
   list.sort((a,b) => {
     switch (state.sort) {
       case 'name': return byName(a,b);
       case 'year-desc': return (b.year??0)-(a.year??0) || byName(a,b);
       case 'year-asc': return (a.year??Infinity)-(b.year??Infinity) || byName(a,b);
-      case 'tmdb': return numeric(b,'tmdb')-numeric(a,'tmdb') || byName(a,b);
-      case 'imdb': return numeric(b,'imdb')-numeric(a,'imdb') || byName(a,b);
+      case 'imdb': return byRating(a,b,'imdb');
+      case 'metacritic': return byRating(a,b,'metacritic');
       case 'duration': return (a.duration??Infinity)-(b.duration??Infinity) || byName(a,b);
-      default: return numeric(b,'csfd')-numeric(a,'csfd') || byName(a,b);
+      default: return byRating(a,b,'csfd');
     }
   });
   return list;
@@ -186,7 +199,7 @@ function patchPoster(id,url) {
 }
 async function resolveQueuedArtwork(job,session,signal) {
   try {
-    const module=await import('./online-details.mjs?v=3.4.0');
+    const module=await import('./online-details.mjs?v=3.5.1');
     if(signal.aborted || session!==artworkSession)return;
     const art=await module.resolveArtwork(job.item,signal);
     if(signal.aborted || session!==artworkSession || document.body.classList.contains('locked'))return;
@@ -376,7 +389,7 @@ async function showDetails(id) {
   detailRequest=new AbortController();
   const requestId=++detailCounter;
   const movie=item.type==='movie';
-  const storedRatings=Object.entries(item.ratings||{}).filter(([,rating])=>rating && Number.isFinite(rating.value)).sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  const storedRatings=Object.entries(item.ratings||{}).filter(([,rating])=>rating && Number.isFinite(rating.value)).sort((a,b)=>ratingProviderSort(a[0],b[0]));
   const initialRatings=storedRatings.length?`<div class="online-score-list">${storedRatings.map(([provider,rating])=>`<div class="${provider==='csfd'?'csfd':''}"><span>${entity(providerNames[provider]||provider)}</span><strong>${entity(ratingLabel(provider,rating))}</strong>${rating.sample?'<small>Demo, neověřeno</small>':''}</div>`).join('')}</div>`:'<p class="online-empty">Hodnocení není dostupné.</p>';
   const links=Object.entries(item.links || {}).map(([p,url]) => ({provider:p,url:safeUrl(url)})).filter(l=>l.url).map(l=>`<a class="btn ${l.provider==='csfd'?'btn-red':'btn-ghost'}" href="${entity(l.url)}" target="_blank" rel="noopener noreferrer">Otevřít ${entity(providerNames[l.provider]||l.provider)} ${icon('external')}</a>`).join('');
   $('#detailContent').innerHTML=`<button class="modal-close" id="detailClose" aria-label="Zavřít detail">${icon('close')}</button>
@@ -390,11 +403,12 @@ async function showDetails(id) {
   if(!$('#detailDialog').open)$('#detailDialog').showModal();
   $('#detailClose').addEventListener('click',()=>$('#detailDialog').close());
   try {
-    const module = await import('./online-details.mjs?v=3.4.0');
+    const module = await import('./online-details.mjs?v=3.5.1');
     if(requestId!==detailCounter || detailRequest.signal.aborted)return;
     await module.renderOnlineDetails(item, $('#onlineDetails'), {
       signal:detailRequest.signal,
       isCurrent:()=>requestId===detailCounter && $('#detailDialog').open && !document.body.classList.contains('locked'),
+      onRatings: ratings=>mergeRatings(item,ratings),
       onLocalTitle: (name,year) => media.find(m => m.title.localeCompare(name,'cs',{sensitivity:'base'})===0 && (year==null || m.year===year))
     });
   } catch(error) {
@@ -402,6 +416,31 @@ async function showDetails(id) {
       console.warn('Online details unavailable:',error);
       $('#onlineDetails').innerHTML=`<section class="online-section"><h3 class="online-heading">Hodnocení</h3>${initialRatings}</section><p class="online-unavailable">Rozšířené online sekce se nepodařilo načíst. Uložená hodnocení a odkazy jsou stále dostupné.</p>`;
     }
+  }
+}
+function mergeRatings(item,ratings) {
+  if(!item || !media.includes(item) || document.body.classList.contains('locked'))return false;
+  let changed=false;
+  for(const [provider,rating] of Object.entries(ratings || {})) {
+    if(!/^[a-z0-9_-]{1,30}$/.test(provider) || !rating || !Number.isFinite(rating.value) || !Number.isFinite(rating.max) || rating.max<=0 || rating.value<0 || rating.value>rating.max)continue;
+    const previous=item.ratings?.[provider];
+    if(previous?.value===rating.value && previous?.max===rating.max)continue;
+    item.ratings ||= {};
+    item.ratings[provider]={value:rating.value,max:rating.max};
+    changed=true;
+  }
+  if(changed)render();
+  return changed;
+}
+async function hydrateRatingsFromCache(session,signal) {
+  try {
+    const module=await import('./online-details.mjs?v=3.5.1');
+    if(signal.aborted || session!==ratingsSession)return;
+    await module.hydrateCachedRatings(media,{signal,onRatings:(item,ratings)=>{
+      if(!signal.aborted && session===ratingsSession)mergeRatings(item,ratings);
+    }});
+  } catch(error) {
+    if(!signal.aborted)console.debug('Cached ratings unavailable:',error?.message||error);
   }
 }
 function toast(message) {
@@ -513,6 +552,10 @@ function openLibrary(content,parsed,mode,intent) {
   initHero();
   setUpdatedStamp(content,mode);
   render();
+  ratingsController?.abort();
+  ratingsController=new AbortController();
+  const session=++ratingsSession;
+  void hydrateRatingsFromCache(session,ratingsController.signal);
   setHeaderNav();
   $('#globalSearch').focus({preventScroll:true});
   return true;
@@ -588,6 +631,7 @@ function lockLibrary() {
   cancelDemoLoad();
   pauseHero();
   resetArtwork();
+  ratingsController?.abort();ratingsController=null;ratingsSession++;
   if($('#galleryDialog')?.open)$('#galleryDialog').close();
   if(detailRequest)detailRequest.abort();
   detailRequest=null;detailCounter++;

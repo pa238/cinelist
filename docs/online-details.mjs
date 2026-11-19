@@ -1,4 +1,4 @@
-import { cachedJSON } from './api-cache.mjs';
+import { cachedJSON, cachedJSONOnly } from './api-cache.mjs?v=3.5.1';
 /**
  * CINELIST online-only detail enhancement.
  * Loaded dynamically only after the user opens a title. No API key or server.
@@ -44,6 +44,26 @@ const imageFrom = (field) => {
   if(field && typeof field==='object')return imgOrNull(field.large || field.original || field.medium || field.small);
   return null;
 };
+const RATING_ORDER = ['csfd','imdb','metacritic','rt','rt_audience'];
+const ratingRank = provider => {
+  const index=RATING_ORDER.indexOf(provider);
+  return index<0 ? RATING_ORDER.length : index;
+};
+const compareProviders = (a,b) => ratingRank(a)-ratingRank(b) || a.localeCompare(b,'cs');
+const validRating = (value,max) => {
+  const number=ratingNumber(value);
+  return number!==null && number>=0 && number<=max ? {value:number,max} : null;
+};
+const percentageLabel = rating => `${new Intl.NumberFormat('cs-CZ',{maximumFractionDigits:1}).format(rating.value/rating.max*100)} %`;
+function ratingsFrom(meta,scores) {
+  const ratings={};
+  const add=(provider,value,max)=>{const rating=validRating(value,max);if(rating)ratings[provider]=rating;};
+  add('imdb',scores?.imdb?.rating ?? meta?.imdbRating,10);
+  add('metacritic',scores?.metacritic?.critics?.score,100);
+  add('rt',scores?.rottenTomatoes?.critics?.score,100);
+  add('rt_audience',scores?.rottenTomatoes?.audience?.score,100);
+  return ratings;
+}
 
 async function fetchJSON(url,signal) { return cachedJSON(url,signal); }
 async function streamx(path, signal) {
@@ -308,15 +328,15 @@ const unavailable=label=>`<p class="online-unavailable">${escapeHtml(label)} se 
 
 function storedScores(item) {
   const entries=Object.entries(item.ratings||{}).filter(([,rating])=>rating && Number.isFinite(rating.value));
-  entries.sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  entries.sort((a,b)=>compareProviders(a[0],b[0]));
   return new Map(entries.map(([provider,rating])=>[provider,{
     label:providerLabels[provider] || provider,
-    value:(rating.max===100 || ['csfd','metacritic','rt'].includes(provider))?`${rating.value} %`:Number(rating.value).toFixed(1),
+    value:percentageLabel(rating),
     sample:rating.sample===true
   }]));
 }
 function renderScores(target,scores,pending=false,failed=false) {
-  const entries=[...scores].sort((a,b)=>a[0]==='csfd'?-1:b[0]==='csfd'?1:0);
+  const entries=[...scores].sort((a,b)=>compareProviders(a[0],b[0]));
   target.innerHTML=entries.length?`<div class="online-score-list">${entries.map(([provider,score])=>`<div class="${provider==='csfd'?'csfd':''}"><span>${escapeHtml(score.label)}</span><strong>${escapeHtml(score.value)}</strong>${score.sample?'<small>Demo, neověřeno</small>':''}</div>`).join('')}</div>${pending?'<p class="online-pending-note">Další online hodnocení se načítají…</p>':''}`:pending?loading('hodnocení'):failed?unavailable('Hodnocení'):'<p class="online-empty">Hodnocení není dostupné.</p>';
 }
 function detailsFor(item,meta,scores) {
@@ -386,7 +406,7 @@ function bindSectionAssets(node,pictures=[]) {
   if(pictures.length)initGallery(node,pictures);
   node.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>img.classList.add('image-failed'),{once:true}));
 }
-export async function renderOnlineDetails(item,node,{signal,isCurrent}) {
+export async function renderOnlineDetails(item,node,{signal,isCurrent,onRatings}) {
   if(!node || signal?.aborted)return;
   const scores=storedScores(item);
   node.innerHTML=`
@@ -429,7 +449,8 @@ export async function renderOnlineDetails(item,node,{signal,isCurrent}) {
     }
     patchVisual(item,active);bindSectionAssets(node,pictures);
     const onlineImdb=ratingNumber(active.imdbRating);
-    if(onlineImdb!==null){scores.set('imdb',{label:'IMDb',value:`${onlineImdb.toFixed(1)} / 10`});renderScores(section('ratings'),scores,true);}
+    const emitted=validRating(onlineImdb,10);
+    if(emitted){scores.set('imdb',{label:'IMDb',value:percentageLabel(emitted)});onRatings?.({imdb:emitted});renderScores(section('ratings'),scores,true);}
   };
   const cinemetaPromise=fetchJSON(`https://v3-cinemeta.strem.io/meta/${type}/${imdb}.json`,signal);
   const metadataPromise=streamx(`/meta/${type}/${imdb}`,signal);
@@ -440,8 +461,10 @@ export async function renderOnlineDetails(item,node,{signal,isCurrent}) {
   metadataPromise.then(raw=>applyMeta(raw?.meta,true)).catch(()=>{});
   scoresPromise.then(raw=>{
     if(!isCurrent() || signal?.aborted)return;latestScores=raw;
-    const values=[['imdb','IMDb',ratingNumber(raw?.imdb?.rating),v=>`${v.toFixed(1)} / 10`],['rt','Rotten Tomatoes',ratingNumber(raw?.rottenTomatoes?.critics?.score),v=>`${v} %`],['rt_audience','RT diváci',ratingNumber(raw?.rottenTomatoes?.audience?.score),v=>`${v} %`],['metacritic','Metacritic',ratingNumber(raw?.metacritic?.critics?.score),v=>`${v} / 100`]];
-    for(const [key,label,value,format] of values)if(value!==null)scores.set(key,{label,value:format(value)});
+    const values=[['imdb','IMDb',raw?.imdb?.rating,10],['rt','Rotten Tomatoes',raw?.rottenTomatoes?.critics?.score,100],['rt_audience','RT diváci',raw?.rottenTomatoes?.audience?.score,100],['metacritic','Metacritic',raw?.metacritic?.critics?.score,100]];
+    for(const [key,label,value,max] of values){const rating=validRating(value,max);if(rating)scores.set(key,{label,value:percentageLabel(rating)});}
+    const emitted=ratingsFrom(null,raw);
+    if(Object.keys(emitted).length)onRatings?.(emitted);
     renderScores(section('ratings'),scores,false,!scores.size);
     if(bestMeta)section('facts').innerHTML=detailsFor(item,bestMeta,latestScores);
   }).catch(()=>{if(isCurrent()&&!signal?.aborted)renderScores(section('ratings'),scores,false,!scores.size);});
@@ -471,5 +494,53 @@ export async function renderOnlineDetails(item,node,{signal,isCurrent}) {
   if(creditsResult.status==='fulfilled' && !section('cast').querySelector('.people-scroll'))section('cast').innerHTML='<p class="online-empty">Obsazení není z dostupných zdrojů k dispozici.</p>';
   if(creditsResult.status==='fulfilled' && !section('crew').querySelector('.people-scroll'))section('crew').innerHTML='<p class="online-empty">Tvůrci a štáb nejsou z dostupných zdrojů k dispozici.</p>';
   void cinemetaResult;void metadataResult;
+}
+
+async function cachedImdbFor(item,signal) {
+  const externalId=item.externalIds?.imdb;
+  if(imdbPattern.test(externalId || ''))return externalId;
+  const direct=(item.links?.imdb || '').match(/\/title\/(tt\d{7,10})/);
+  if(direct)return direct[1];
+  const queries=[...new Set([item.original,item.title].map(text).filter(Boolean))];
+  for(const term of queries) {
+    const path=`/search?q=${encodeURIComponent(term)}&type=${item.type}`;
+    const urls=[...ENDPOINTS.map(base=>`${base}${path}`),`https://v3-cinemeta.strem.io/catalog/${item.type}/top/search=${encodeURIComponent(term)}.json`];
+    for(const url of urls) {
+      const raw=await cachedJSONOnly(url,{signal}).catch(error=>{if(signal?.aborted)throw error;return null;});
+      const candidates=new Map();
+      for(const candidate of asList(raw?.metas)){
+        const score=validateMatch(item,candidate),previous=candidates.get(candidate.id);
+        if(score>=5 && (!previous || previous.score<score))candidates.set(candidate.id,{candidate,score});
+      }
+      const ranked=[...candidates.values()].sort((a,b)=>b.score-a.score);
+      if(ranked.length && (ranked.length===1 || ranked[0].score>ranked[1].score))return ranked[0].candidate.id;
+    }
+  }
+  return null;
+}
+
+/** Restore only ratings whose search/metadata/score responses already exist in the public cache. */
+export async function hydrateCachedRatings(items,{signal,onRatings}={}) {
+  for(const item of items || []) {
+    if(signal?.aborted)throw new DOMException('Request canceled','AbortError');
+    const imdb=await cachedImdbFor(item,signal);
+    if(!imdb)continue;
+    const collected={};
+    const merge=ratings=>Object.assign(collected,ratings);
+    const metadataUrls=[
+      `https://v3-cinemeta.strem.io/meta/${item.type}/${imdb}.json`,
+      ...ENDPOINTS.map(base=>`${base}/meta/${item.type}/${imdb}`)
+    ];
+    for(const url of metadataUrls) {
+      const raw=await cachedJSONOnly(url,{signal}).catch(error=>{if(signal?.aborted)throw error;return null;});
+      merge(ratingsFrom(raw?.meta || raw,null));
+    }
+    for(const base of ENDPOINTS) {
+      const raw=await cachedJSONOnly(`${base}/scores/${item.type}/${imdb}`,{signal}).catch(error=>{if(signal?.aborted)throw error;return null;});
+      merge(ratingsFrom(null,raw));
+    }
+    if(signal?.aborted)throw new DOMException('Request canceled','AbortError');
+    if(Object.keys(collected).length)onRatings?.(item,collected);
+  }
 }
 

@@ -1,10 +1,14 @@
 /* CINELIST: caches public poster/cast artwork only, never the private library. */
 'use strict';
-const CACHE = 'cinelist-public-images-v1';
+const CACHE = 'cinelist-public-images-v2';
 const MAX = 240;
 const ALLOWED = new Set(['api.streamx.qzz.io','streamx-api.pages.dev','images.metahub.space','image.tmdb.org','static.tvmaze.com','upload.wikimedia.org','commons.wikimedia.org','v3-cinemeta.strem.io']);
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', event => event.waitUntil((async()=>{
+  const names=await caches.keys();
+  await Promise.all(names.filter(name=>name.startsWith('cinelist-public-images-') && name!==CACHE).map(name=>caches.delete(name)));
+  await self.clients.claim();
+})()));
 self.addEventListener('fetch', event => {
   const request=event.request;
   if(request.method!=='GET' || request.destination!=='image')return;

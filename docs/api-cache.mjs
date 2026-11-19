@@ -41,6 +41,17 @@ async function saveCached(cache, url, data) {
     if(keys.length>MAX)await Promise.all(keys.slice(0,keys.length-MAX).map(key=>cache.delete(key)));
   } catch { /* Storage may be disabled/full. Online mode still works. */ }
 }
+/** Read acceptable public metadata from Cache Storage without using fetch. */
+export async function cachedJSONOnly(url,options={}) {
+  if(!validUrl(url))throw new Error('Nepodporovaný zdroj online informací');
+  const signal=options instanceof AbortSignal ? options : options?.signal;
+  const maxAge=Number.isFinite(options?.maxAge) && options.maxAge>=0 ? options.maxAge : 14*DAY;
+  if(signal?.aborted)throw new DOMException('Request canceled','AbortError');
+  const cached=await readCached(await cacheStore(),url);
+  if(signal?.aborted)throw new DOMException('Request canceled','AbortError');
+  if(!cached || !Number.isFinite(cached.saved) || Date.now()-cached.saved>=maxAge)return null;
+  return cached.data;
+}
 export async function cachedJSON(url,signal) {
   if(!validUrl(url))throw new Error('Nepodporovaný zdroj online informací');
   if(signal?.aborted)throw new DOMException('Request canceled','AbortError');
