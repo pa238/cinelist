@@ -1,0 +1,1246 @@
+{
+  "format": "cinelist-library",
+  "version": 1,
+  "media": [
+    {
+      "id": "csfd-10135",
+      "type": "movie",
+      "title": "Forrest Gump",
+      "original": "",
+      "year": 1994,
+      "duration": 142,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Komedie",
+        "Romantický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 94,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/10135-forrest-gump/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:34Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-2294",
+      "type": "movie",
+      "title": "Vykoupení z věznice Shawshank",
+      "original": "The Shawshank Redemption",
+      "year": 1994,
+      "duration": 142,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Krimi"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 95,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/2294-vykoupeni-z-veznice-shawshank/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:38Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-8852",
+      "type": "movie",
+      "title": "Pulp Fiction: Historky z podsvětí",
+      "original": "Pulp Fiction",
+      "year": 1994,
+      "duration": 154,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Krimi",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/8852-pulp-fiction-historky-z-podsveti/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:43Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-4711",
+      "type": "movie",
+      "title": "Pán prstenů: Společenstvo Prstenu",
+      "original": "The Lord of the Rings: The Fellowship of the Ring",
+      "year": 2001,
+      "duration": 172,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Fantasy",
+        "Dobrodružný",
+        "Akční"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/4711-pan-prstenu-spolecenstvo-prstenu/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:47Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-4713",
+      "type": "movie",
+      "title": "Pán prstenů: Dvě věže",
+      "original": "The Lord of the Rings: The Two Towers",
+      "year": 2002,
+      "duration": 172,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Fantasy",
+        "Dobrodružný",
+        "Akční"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/4713-pan-prstenu-dve-veze/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:52Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-4712",
+      "type": "movie",
+      "title": "Pán prstenů: Návrat krále",
+      "original": "The Lord of the Rings: The Return of the King",
+      "year": 2003,
+      "duration": 201,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Fantasy",
+        "Dobrodružný",
+        "Akční"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/4712-pan-prstenu-navrat-krale/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:18:56Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-2292",
+      "type": "movie",
+      "title": "Zelená míle",
+      "original": "The Green Mile",
+      "year": 1999,
+      "duration": 188,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Krimi",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 93,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/2292-zelena-mile/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:01Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-254156",
+      "type": "movie",
+      "title": "Počátek",
+      "original": "Inception",
+      "year": 2010,
+      "duration": 148,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Akční",
+        "Sci-Fi",
+        "Thriller",
+        "Dobrodružný"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/254156-pocatek/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:05Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-227786",
+      "type": "movie",
+      "title": "Interstellar",
+      "original": "Flora's Letter",
+      "year": 2014,
+      "duration": 169,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Sci-Fi",
+        "Dobrodružný",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 86,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/227786-interstellar/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:10Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-9499",
+      "type": "movie",
+      "title": "Matrix",
+      "original": "The Matrix",
+      "year": 1999,
+      "duration": 136,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Akční",
+        "Sci-Fi",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 90,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/9499-matrix/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:14Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-2667",
+      "type": "movie",
+      "title": "Klub rváčů",
+      "original": "Fight Club",
+      "year": 1999,
+      "duration": 139,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 88,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/2667-klub-rvacu/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:19Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-2671",
+      "type": "movie",
+      "title": "Sedm",
+      "original": "Seven",
+      "year": 1995,
+      "duration": 127,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Thriller",
+        "Krimi",
+        "Drama",
+        "Mysteriózní Psychologický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 92,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/2671-sedm/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:23Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-223734",
+      "type": "movie",
+      "title": "Temný rytíř",
+      "original": "The Dark Knight",
+      "year": 2008,
+      "duration": 152,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Akční",
+        "Drama",
+        "Krimi",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/223734-temny-rytir/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:28Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-8271",
+      "type": "movie",
+      "title": "Gladiátor",
+      "original": "Gladiator",
+      "year": 2000,
+      "duration": 155,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Akční",
+        "Dobrodružný",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/8271-gladiator/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:32Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-306731",
+      "type": "movie",
+      "title": "Nedotknutelní",
+      "original": "The Intouchables",
+      "year": 2011,
+      "duration": 112,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Komedie",
+        "Drama",
+        "Životopisný"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/306731-nedotknutelni/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:37Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-1644",
+      "type": "movie",
+      "title": "Kmotr",
+      "original": "The Godfather",
+      "year": 1972,
+      "duration": 175,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Krimi"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 92,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/1644-kmotr/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:41Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-1248",
+      "type": "movie",
+      "title": "Terminátor 2: Den zúčtování",
+      "original": "Terminator 2: Judgment Day",
+      "year": 1991,
+      "duration": 137,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Akční",
+        "Sci-Fi",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/1248-terminator-2-den-zuctovani/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:46Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-4570",
+      "type": "movie",
+      "title": "Pelíšky",
+      "original": "Cosy Dens",
+      "year": 1999,
+      "duration": 116,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Komedie",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/4570-pelisky/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:50Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-8653",
+      "type": "movie",
+      "title": "Schindlerův seznam",
+      "original": "Schindler's List",
+      "year": 1993,
+      "duration": 195,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Drama",
+        "Historický",
+        "Životopisný"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 92,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/8653-schindleruv-seznam/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:19:55Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-235492",
+      "type": "movie",
+      "title": "Prokletý ostrov",
+      "original": "Shutter Island",
+      "year": 2010,
+      "duration": 138,
+      "seasons": null,
+      "episodes": null,
+      "status": "watchlist",
+      "genres": [
+        "Thriller",
+        "Drama",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 88,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/235492-proklety-ostrov/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:00Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-263138",
+      "type": "series",
+      "title": "Hra o trůny",
+      "original": "Game of Thrones",
+      "year": 2011,
+      "duration": null,
+      "seasons": 8,
+      "episodes": 73,
+      "status": "download",
+      "genres": [
+        "Fantasy",
+        "Akční",
+        "Dobrodružný",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/263138-hra-o-truny/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:04Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-237486",
+      "type": "series",
+      "title": "Perníkový táta",
+      "original": "Breaking Bad",
+      "year": 2008,
+      "duration": null,
+      "seasons": 5,
+      "episodes": 62,
+      "status": "download",
+      "genres": [
+        "Krimi",
+        "Drama",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 93,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/237486-pernikovy-tata/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:08Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-68928",
+      "type": "series",
+      "title": "Přátelé",
+      "original": "Friends",
+      "year": 1994,
+      "duration": null,
+      "seasons": 10,
+      "episodes": 236,
+      "status": "download",
+      "genres": [
+        "Komedie",
+        "Romantický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/68928-pratele/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:13Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-72489",
+      "type": "series",
+      "title": "Simpsonovi",
+      "original": "The Simpsons",
+      "year": 1989,
+      "duration": null,
+      "seasons": 38,
+      "episodes": 822,
+      "status": "download",
+      "genres": [
+        "Animovaný",
+        "Komedie"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 92,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/72489-simpsonovi/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:19Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-234260",
+      "type": "series",
+      "title": "Teorie velkého třesku",
+      "original": "The Big Bang Theory",
+      "year": 2007,
+      "duration": null,
+      "seasons": 12,
+      "episodes": 279,
+      "status": "download",
+      "genres": [
+        "Komedie",
+        "Romantický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/234260-teorie-velkeho-tresku/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:22Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-221411",
+      "type": "series",
+      "title": "Jak jsem poznal vaši matku",
+      "original": "How I Met Your Mother",
+      "year": 2005,
+      "duration": null,
+      "seasons": 9,
+      "episodes": 208,
+      "status": "download",
+      "genres": [
+        "Komedie",
+        "Romantický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 84,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/221411-jak-jsem-poznal-vasi-matku/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:27Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-683975",
+      "type": "series",
+      "title": "Černobyl",
+      "original": "Chernobyl",
+      "year": 2019,
+      "duration": null,
+      "seasons": null,
+      "episodes": 5,
+      "status": "download",
+      "genres": [
+        "Drama",
+        "Historický"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 96,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/683975-cernobyl/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:31Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-430582",
+      "type": "series",
+      "title": "Stranger Things",
+      "original": "",
+      "year": 2016,
+      "duration": null,
+      "seasons": 5,
+      "episodes": 42,
+      "status": "download",
+      "genres": [
+        "Drama",
+        "Fantasy",
+        "Horor",
+        "Sci-Fi",
+        "Thriller",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/430582-stranger-things/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:35Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-281729",
+      "type": "series",
+      "title": "Sherlock",
+      "original": "",
+      "year": 2010,
+      "duration": null,
+      "seasons": 4,
+      "episodes": 12,
+      "status": "download",
+      "genres": [
+        "Krimi",
+        "Drama",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 91,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/281729-sherlock/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:40Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-198118",
+      "type": "series",
+      "title": "Kancl",
+      "original": "The Office",
+      "year": 2005,
+      "duration": null,
+      "seasons": 9,
+      "episodes": 188,
+      "status": "download",
+      "genres": [
+        "Komedie"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 85,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/198118-kancl/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:44Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-215295",
+      "type": "series",
+      "title": "Dr. House",
+      "original": "House M.D.",
+      "year": 2004,
+      "duration": null,
+      "seasons": 8,
+      "episodes": 176,
+      "status": "download",
+      "genres": [
+        "Drama Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 87,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/215295-dr-house/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:49Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-224291",
+      "type": "series",
+      "title": "Dexter",
+      "original": "",
+      "year": 2006,
+      "duration": null,
+      "seasons": 9,
+      "episodes": 106,
+      "status": "download",
+      "genres": [
+        "Krimi",
+        "Drama",
+        "Thriller",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 88,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/224291-dexter/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:53Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-221060",
+      "type": "series",
+      "title": "Útěk z vězení",
+      "original": "Prison Break",
+      "year": 2005,
+      "duration": null,
+      "seasons": 5,
+      "episodes": 90,
+      "status": "download",
+      "genres": [
+        "Thriller",
+        "Drama",
+        "Akční",
+        "Krimi"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 81,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/221060-utek-z-vezeni/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:20:58Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-187968",
+      "type": "series",
+      "title": "Ztraceni",
+      "original": "Lost",
+      "year": 2004,
+      "duration": null,
+      "seasons": 6,
+      "episodes": 117,
+      "status": "download",
+      "genres": [
+        "Dobrodružný",
+        "Drama",
+        "Fantasy",
+        "Sci-Fi",
+        "Thriller",
+        "Mysteriózní"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 76,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/187968-ztraceni/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:02Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-366575",
+      "type": "series",
+      "title": "Volejte Saulovi",
+      "original": "Better Call Saul",
+      "year": 2015,
+      "duration": null,
+      "seasons": 6,
+      "episodes": 63,
+      "status": "download",
+      "genres": [
+        "Krimi",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 89,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/366575-volejte-saulovi/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:07Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-268090",
+      "type": "series",
+      "title": "Živí mrtví",
+      "original": "The Walking Dead",
+      "year": 2010,
+      "duration": null,
+      "seasons": 11,
+      "episodes": 177,
+      "status": "download",
+      "genres": [
+        "Horor",
+        "Thriller",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 80,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/268090-zivi-mrtvi/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:11Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-330877",
+      "type": "series",
+      "title": "Gangy z Birminghamu",
+      "original": "Peaky Blinders",
+      "year": 2013,
+      "duration": null,
+      "seasons": 6,
+      "episodes": 36,
+      "status": "download",
+      "genres": [
+        "Krimi",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 90,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/330877-gangy-z-birminghamu/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:16Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-214772",
+      "type": "series",
+      "title": "Černé zrcadlo",
+      "original": "Black Mirror",
+      "year": 2011,
+      "duration": null,
+      "seasons": 8,
+      "episodes": 34,
+      "status": "download",
+      "genres": [
+        "Drama",
+        "Komedie",
+        "Horor",
+        "Sci-Fi",
+        "Thriller"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 86,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/214772-cerne-zrcadlo/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:21Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-56207",
+      "type": "series",
+      "title": "Narcos",
+      "original": "",
+      "year": 2015,
+      "duration": null,
+      "seasons": 3,
+      "episodes": 30,
+      "status": "download",
+      "genres": [
+        "Životopisný",
+        "Krimi",
+        "Drama"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 93,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/56207-narcos/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:25Z"
+        }
+      }
+    },
+    {
+      "id": "csfd-322131",
+      "type": "series",
+      "title": "Vikingové",
+      "original": "Vikings",
+      "year": 2013,
+      "duration": null,
+      "seasons": 6,
+      "episodes": 89,
+      "status": "download",
+      "genres": [
+        "Akční",
+        "Drama",
+        "Historický",
+        "Dobrodružný"
+      ],
+      "ratings": {
+        "csfd": {
+          "value": 86,
+          "max": 100
+        }
+      },
+      "links": {
+        "csfd": "https://www.csfd.cz/film/322131-vikingove/prehled/"
+      },
+      "overview": "",
+      "sources": {
+        "csfd": {
+          "syncedAt": "2026-11-19T21:21:29Z"
+        }
+      }
+    }
+  ],
+  "updatedAt": "2026-11-19T21:21:29Z"
+}

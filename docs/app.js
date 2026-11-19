@@ -1,16 +1,22 @@
 'use strict';
 
-// CINELIST: the public application contains neither the password nor plaintext media data.
-// The encrypted archive is downloaded before unlocking and decrypted in browser memory.
+// CINELIST: private media remains encrypted; the public demo is fetched only on request.
+// Both library modes are parsed and rendered only in browser memory.
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const entity = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const providerNames = {csfd:'ČSFD',tmdb:'TMDB',imdb:'IMDb',tvmaze:'TVmaze',trakt:'Trakt',metacritic:'Metacritic',rt:'Rotten Tomatoes'};
 const allowedArts = new Set(['art-a','art-b','art-c','art-d','art-e','art-f']);
+const MAX_LIBRARY_BYTES = 20*1024*1024;
 const state = {type:'all',genre:'all',status:'all',sort:'csfd',query:'',layout:'grid'};
 let media = [];
 let envelope = null;
+let activeLibraryMode = null;
+let libraryState = 'idle';
+let libraryIntent = 0;
+let archiveState = 'idle';
+let demoController = null;
 let toastTimer = null;
 let heroQueue = [];
 let heroPosition = 0;
@@ -180,7 +186,7 @@ function patchPoster(id,url) {
 }
 async function resolveQueuedArtwork(job,session,signal) {
   try {
-    const module=await import('./online-details.mjs?v=3.3.0');
+    const module=await import('./online-details.mjs?v=3.4.0');
     if(signal.aborted || session!==artworkSession)return;
     const art=await module.resolveArtwork(job.item,signal);
     if(signal.aborted || session!==artworkSession || document.body.classList.contains('locked'))return;
@@ -254,8 +260,8 @@ function setHeaderNav() {
     if(selected)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
   });
 }
-function setUpdatedStamp(content) {
-  const d=content.updatedAt||content.modifiedAt||envelope?.encryptedAt||databaseLastModified;
+function setUpdatedStamp(content,mode) {
+  const d=content.updatedAt||content.modifiedAt||(mode==='private'?(envelope?.encryptedAt||databaseLastModified):null);
   const date=typeof d==='string'?new Date(d):null;
   if(!date||Number.isNaN(date.getTime())) {
     $('#dbUpdated').textContent='Poslední aktualizace databáze: neuvedena';return;
@@ -384,7 +390,7 @@ async function showDetails(id) {
   if(!$('#detailDialog').open)$('#detailDialog').showModal();
   $('#detailClose').addEventListener('click',()=>$('#detailDialog').close());
   try {
-    const module = await import('./online-details.mjs?v=3.3.0');
+    const module = await import('./online-details.mjs?v=3.4.0');
     if(requestId!==detailCounter || detailRequest.signal.aborted)return;
     await module.renderOnlineDetails(item, $('#onlineDetails'), {
       signal:detailRequest.signal,
@@ -450,63 +456,136 @@ function validateEnvelope(data) {
   if(decodeBase64(data.kdf.salt).length!==16||decodeBase64(data.iv).length!==12||decodeBase64(data.ciphertext).length<17) throw new Error('Neplatná délka šifrovaných dat.');
   return data;
 }
-async function loadEnvelope() {
+function restoreArchiveControls() {
   const input=$('#unlockPassword'), button=$('#unlockButton'), status=$('#unlockStatus');
-  input.disabled=true;button.disabled=true;button.textContent='Načítání databáze…';
-  $('#retryWrap').hidden=true;status.classList.remove('error');status.textContent='Načítám zašifrovanou databázi…';
+  status.classList.remove('error');
+  $('#retryWrap').hidden=true;
+  if(!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
+    input.disabled=true;button.disabled=true;button.textContent='Odemknout knihovnu';
+    status.textContent='Pro šifrování je potřeba HTTPS nebo localhost a podporovaný prohlížeč.';
+    status.classList.add('error');
+  } else if(archiveState==='ready') {
+    input.disabled=false;button.disabled=false;button.textContent='Odemknout knihovnu';
+    status.textContent='Šifrovaná databáze je připravená.';
+  } else if(archiveState==='failed') {
+    input.disabled=true;button.disabled=true;button.textContent='Odemknout knihovnu';
+    status.textContent='Soubor movies.enc.json není dostupný. Spusť web přes HTTP server nebo GitHub Pages.';
+    status.classList.add('error');$('#retryWrap').hidden=false;
+  } else {
+    input.disabled=true;button.disabled=true;button.textContent='Načítání databáze…';
+    status.textContent='Načítám zašifrovanou databázi…';
+  }
+}
+async function loadEnvelope() {
+  archiveState='loading';
+  restoreArchiveControls();
   try {
     const response=await fetch('./movies.enc.json',{cache:'no-store'});
     if(!response.ok) throw new Error(`HTTP ${response.status}`);
     const buf=await response.arrayBuffer();
-    if(buf.byteLength>20*1024*1024) throw new Error('Soubor je příliš velký.');
+    if(buf.byteLength>MAX_LIBRARY_BYTES) throw new Error('Soubor je příliš velký.');
     envelope=validateEnvelope(JSON.parse(new TextDecoder().decode(buf)));
     databaseLastModified=response.headers.get('Last-Modified');
-    input.disabled=false;button.disabled=false;button.textContent='Odemknout knihovnu';
-    status.textContent='Šifrovaná databáze je připravená.';
-    input.focus();
+    archiveState='ready';
+    restoreArchiveControls();
+    if(document.body.classList.contains('locked'))$('#unlockPassword').focus();
   } catch(error) {
     console.error('Unable to load encrypted archive:',error);
-    envelope=null;databaseLastModified=null;status.textContent='Soubor movies.enc.json není dostupný. Spusť web přes HTTP server nebo GitHub Pages.';status.classList.add('error');
-    $('#retryWrap').hidden=false;
+    envelope=null;databaseLastModified=null;archiveState='failed';restoreArchiveControls();
+  }
+}
+function cancelDemoLoad() {
+  demoController?.abort();
+  demoController=null;
+  const button=$('#demoButton');
+  button.disabled=false;button.textContent='Vyzkoušet demo';
+}
+function openLibrary(content,parsed,mode,intent) {
+  if(intent!==libraryIntent)return false;
+  if(mode==='private')cancelDemoLoad();
+  media=parsed;activeLibraryMode=mode;libraryState='opened';
+  $('#demoBadge').hidden=mode!=='demo';
+  document.body.classList.remove('locked');
+  $('#lockScreen').hidden=true;
+  $('#detailContent').replaceChildren();
+  updateMetrics();
+  startArtwork();
+  initHero();
+  setUpdatedStamp(content,mode);
+  render();
+  setHeaderNav();
+  $('#globalSearch').focus({preventScroll:true});
+  return true;
+}
+async function loadDemo() {
+  if(demoController || !document.body.classList.contains('locked'))return;
+  const intent=++libraryIntent;
+  libraryState='loading';
+  restoreArchiveControls();
+  demoController=new AbortController();
+  const controller=demoController;
+  const button=$('#demoButton'), status=$('#demoStatus');
+  button.disabled=true;button.textContent='Načítám demo…';
+  status.classList.remove('error');status.textContent='Načítám ukázkovou knihovnu…';
+  try {
+    const response=await fetch('./demo-movies.json',{cache:'no-store',signal:controller.signal});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const declaredSize=Number(response.headers.get('Content-Length'));
+    if(Number.isFinite(declaredSize) && declaredSize>MAX_LIBRARY_BYTES)throw new Error('Soubor je příliš velký.');
+    const buf=await response.arrayBuffer();
+    if(buf.byteLength>MAX_LIBRARY_BYTES)throw new Error('Soubor je příliš velký.');
+    const content=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(buf));
+    const parsed=parseMediaPayload(content);
+    if(controller.signal.aborted || intent!==libraryIntent)return;
+    demoController=null;
+    status.textContent='';
+    openLibrary(content,parsed,'demo',intent);
+  } catch(error) {
+    if(controller.signal.aborted || intent!==libraryIntent)return;
+    console.error('Unable to load demo library:',error);
+    libraryState='failed';
+    status.textContent='Demo se nepodařilo načíst. Zkus to prosím znovu.';
+    status.classList.add('error');
+  } finally {
+    if(demoController===controller)cancelDemoLoad();
   }
 }
 async function unlock(event) {
   event.preventDefault();
-  if(!envelope || !crypto?.subtle) return;
+  if(!envelope || !globalThis.crypto?.subtle) return;
   const input=$('#unlockPassword');
   const password=input.value;
   input.value='';
   const status=$('#unlockStatus');
   const button=$('#unlockButton');
   if(!password) {status.textContent='Zadej heslo.';status.classList.add('error');return;}
+  const intent=++libraryIntent;
+  libraryState='loading';
+  cancelDemoLoad();
+  $('#demoStatus').textContent='';$('#demoStatus').classList.remove('error');
   button.disabled=true;input.disabled=true;button.textContent='Dešifruji…';
   status.classList.remove('error');status.textContent='Ověřuji heslo přímo v prohlížeči…';
   try {
-    const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
-    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:decodeBase64(envelope.kdf.salt),iterations:envelope.kdf.iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['decrypt']);
-    const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:decodeBase64(envelope.iv),tagLength:128},key,decodeBase64(envelope.ciphertext));
+    const material=await globalThis.crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+    const key=await globalThis.crypto.subtle.deriveKey({name:'PBKDF2',salt:decodeBase64(envelope.kdf.salt),iterations:envelope.kdf.iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['decrypt']);
+    const plaintext=await globalThis.crypto.subtle.decrypt({name:'AES-GCM',iv:decodeBase64(envelope.iv),tagLength:128},key,decodeBase64(envelope.ciphertext));
     const content=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(plaintext));
     const parsed=parseMediaPayload(content);
-    media=parsed;
-    document.body.classList.remove('locked');
-    $('#lockScreen').hidden=true;
-    $('#detailContent').replaceChildren();
-    updateMetrics();
-    startArtwork();
-    initHero();
-    setUpdatedStamp(content);
-    render();
-    setHeaderNav();
-    $('#globalSearch').focus({preventScroll:true});
+    if(!openLibrary(content,parsed,'private',intent))return;
     button.textContent='Odemknout knihovnu';input.disabled=false;button.disabled=false;
   } catch(error) {
+    if(intent!==libraryIntent)return;
     console.error('Decryption or data format error:',error.name);
+    libraryState='failed';
     status.textContent='Nesprávné heslo, poškozený soubor nebo neplatný formát dat.';
     status.classList.add('error');
     input.disabled=false;button.disabled=false;button.textContent='Odemknout knihovnu';input.focus();
   }
 }
 function lockLibrary() {
+  libraryIntent++;
+  libraryState='locked';activeLibraryMode=null;
+  cancelDemoLoad();
   pauseHero();
   resetArtwork();
   if($('#galleryDialog')?.open)$('#galleryDialog').close();
@@ -520,12 +599,13 @@ function lockLibrary() {
   heroQueue=[];heroPosition=0;heroElapsed=0;
   $('#heroFeaturePoster').replaceChildren();
   $('#dbUpdated').textContent='Aktualizace databáze: —';
+  $('#demoBadge').hidden=true;
   resetFilters();
   $('#lockScreen').hidden=false;
   $('#unlockPassword').value='';$('#unlockPassword').type='password';
-  $('#unlockStatus').textContent='Šifrovaná databáze je připravená.';
-  $('#unlockStatus').classList.remove('error');
-  $('#unlockPassword').focus();
+  $('#demoStatus').textContent='';$('#demoStatus').classList.remove('error');
+  restoreArchiveControls();
+  if(!$('#unlockPassword').disabled)$('#unlockPassword').focus();else $('#demoButton').focus();
 }
 function applyQuery(value,source) { state.query=value;if(source!=='desktop')$('#globalSearch').value=value;if(source!=='mobile')$('#mobileSearch').value=value;render(); }
 function bindEvents() {
@@ -554,6 +634,7 @@ function bindEvents() {
   $('#heroFeature').addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();$('#heroFeature').click();}});
   $('#lockLibraryBtn').addEventListener('click',lockLibrary);
   $('#unlockForm').addEventListener('submit',unlock);
+  $('#demoButton').addEventListener('click',loadDemo);
   $('#retryLoad').addEventListener('click',loadEnvelope);
   $('#passwordReveal').addEventListener('click',()=>{const input=$('#unlockPassword');input.type=input.type==='password'?'text':'password';$('#passwordReveal').setAttribute('aria-label',input.type==='password'?'Zobrazit heslo':'Skrýt heslo');});
   $('#detailDialog').addEventListener('click',e=>{if(e.target===$('#detailDialog'))$('#detailDialog').close();});
@@ -567,12 +648,8 @@ function bindEvents() {
 bindEvents();
 try{setTheme(localStorage.getItem('cinelist-ui-theme')==='light'?'light':'dark');}catch{setTheme('dark');}
 try{setLayout(localStorage.getItem('cinelist-ui-layout')==='list'?'list':'grid');}catch{setLayout('grid');}
-if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
-  $('#unlockStatus').textContent='Pro šifrování je potřeba HTTPS nebo localhost a podporovaný prohlížeč.';
-  $('#unlockStatus').classList.add('error');
-} else {
-  loadEnvelope();
-}
+if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) restoreArchiveControls();
+else loadEnvelope();
 
 if ('serviceWorker' in navigator && globalThis.isSecureContext) {
   navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.debug('Image cache unavailable:',e?.message));

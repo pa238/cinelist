@@ -411,7 +411,7 @@
   
 /* Read-only encrypted data edition */
 body.locked > header, body.locked > main, body.locked > footer, body.locked > nav.mobile-bottom { display:none!important; }
-.lock-screen { min-height:100dvh; display:grid; place-items:center; padding:38px 18px; background:radial-gradient(ellipse at 80% 20%,rgba(229,9,20,.22),transparent 45%),radial-gradient(ellipse at 10% 90%,rgba(229,9,20,.08),transparent 52%),var(--bg); position:relative; overflow:hidden; }
+.lock-screen { min-height:100dvh; display:grid; place-items:center; padding:38px 18px; background:radial-gradient(ellipse at 80% 20%,rgba(229,9,20,.22),transparent 45%),radial-gradient(ellipse at 10% 90%,rgba(229,9,20,.08),transparent 52%),var(--bg); position:relative; overflow:auto; }
 .lock-screen::before { content:""; position:absolute; width:70vw; height:70vw; max-width:750px; max-height:750px; top:-34vw; right:-19vw; border:1px solid rgba(229,9,20,.17); border-radius:50%; pointer-events:none; }
 .lock-screen[hidden] { display:none!important; }
 .lock-wrap { width:min(100%,450px); position:relative; z-index:1; }
@@ -434,6 +434,16 @@ body.locked > header, body.locked > main, body.locked > footer, body.locked > na
 .lock-submit:disabled { opacity:.58; cursor:wait; transform:none; }
 .lock-feedback { margin:13px 0 0; font-size:12px; color:var(--muted); line-height:1.55; min-height:20px; text-align:center; }
 .lock-feedback.error { color:#ff6d73; }
+.login-divider { display:flex; align-items:center; gap:12px; margin:22px 0 16px; color:var(--subtle); font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.1em; }
+.login-divider::before,.login-divider::after { content:""; height:1px; flex:1; background:var(--border); }
+.demo-button { width:100%; min-height:50px; color:#fff; background:linear-gradient(135deg,#e50914,#b80711); box-shadow:0 8px 28px rgba(229,9,20,.2); font-size:14px; }
+.demo-button:hover:not(:disabled) { background:linear-gradient(135deg,#f21824,#c80914); box-shadow:0 11px 32px rgba(229,9,20,.28); }
+.demo-button:focus-visible { outline:3px solid rgba(229,9,20,.28); outline-offset:3px; }
+.demo-button:disabled { opacity:.65; cursor:wait; transform:none; }
+.demo-feedback { min-height:0; margin:0; text-align:center; color:var(--muted); font-size:12px; line-height:1.55; }
+.demo-feedback:not(:empty) { min-height:20px; margin-top:12px; }
+.demo-feedback.error { color:#ff969d; }
+html[data-theme="light"] .demo-feedback.error { color:#b31220; }
 .lock-help { display:flex; align-items:flex-start; gap:9px; border-top:1px solid var(--border); margin-top:26px; padding-top:20px; color:var(--muted); font-size:11px; line-height:1.65; }
 .lock-help svg { color:var(--red-bright); width:17px; height:17px; flex:none; margin-top:1px; }
 .lock-footer { margin-top:21px; text-align:center; color:var(--subtle); font-size:11px; line-height:1.6; }
@@ -464,6 +474,8 @@ body.locked > header, body.locked > main, body.locked > footer, body.locked > na
 /* CINELIST 3.0: compact, random, keyboard-accessible film selector. */
 .database-meta { display:flex; align-items:center; justify-content:flex-end; gap:7px; margin:22px 3px 9px; color:var(--muted); font-size:11px; font-weight:650; }
 .database-meta .icon { width:14px; height:14px; color:var(--red-bright); }
+.demo-badge { display:inline-flex; align-items:center; border:1px solid rgba(229,9,20,.42); border-radius:99px; padding:2px 7px; color:var(--red-bright); background:var(--red-soft); font-size:9px; font-weight:900; letter-spacing:.09em; }
+.demo-badge[hidden] { display:none; }
 .hero.hero-carousel {
   margin-top:0; min-height:305px; padding:28px 41px 43px;
   display:grid; grid-template-columns:42px minmax(0,1fr) 42px;
